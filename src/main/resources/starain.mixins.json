@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "today.starain.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MixinEntity",
+    "MixinItem",
+    "MixinLivingEntity",
+    "MixinPlayer"
+  ],
+  "client": [
+    "MixinGui",
+    "MixinKeyboardInput",
+    "MixinLivingEntityRenderer",
+    "MixinLocalPlayer",
+    "MixinMinecraft",
+    "MixinWindow"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
