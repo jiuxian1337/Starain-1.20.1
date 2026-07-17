@@ -9,6 +9,7 @@ import today.starain.module.impl.client.*;
 import today.starain.module.impl.combat.KillAura;
 import today.starain.module.impl.combat.Velocity;
 import today.starain.module.impl.misc.AntiBot;
+import today.starain.module.impl.misc.HealthBypass;
 import today.starain.module.impl.misc.Target;
 import today.starain.module.impl.misc.Teams;
 import today.starain.module.impl.movement.NoJumpDelay;
@@ -46,6 +47,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new InvManager());
         modules.add(new TargetHUD());
         modules.add(new NoFall());
+        modules.add(new HealthBypass());
         Starain.getInstance().getEventManager().register(this);
     }
 
