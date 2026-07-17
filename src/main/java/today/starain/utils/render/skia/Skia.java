@@ -499,6 +499,21 @@ public class Skia implements Wrapper {
         drawStyledText(getCanvas(), text, x - bounds.getLeft(), textCenterY, font, getPaint(color));
     }
 
+    /**
+     * 只画模糊的那一层，不画清晰的文字——调用方自己在上面叠一层
+     * {@link #drawHeightCenteredTextPlain} 才能得到发光效果。
+     * 基线算法与 Plain 版完全一致，两者用同一个 y 才能重合。
+     */
+    public static void drawHeightCenteredTextGlow(String text, float x, float y, Color color, Font font, float radius) {
+        if (text == null || text.isEmpty()) return;
+        FontMetrics metrics = font.getMetrics();
+        Rect bounds = font.measureText(text);
+        Paint paint = getPaint(color);
+        paint.setImageFilter(ImageFilter.makeBlur(radius, radius, FilterTileMode.DECAL));
+        float textCenterY = y + (metrics.getAscent() - metrics.getDescent()) / 2 - metrics.getAscent();
+        drawStyledText(getCanvas(), text, x - bounds.getLeft(), textCenterY, font, paint);
+    }
+
     public static void drawFullCenteredText(String text, float x, float y, Color color, Font font) {
         if (text == null || text.isEmpty()) return;
 
