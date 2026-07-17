@@ -27,6 +27,7 @@ public class Velocity extends ClientModule {
 
     public static int attackQueue;
     public static boolean delay;
+    public static boolean jump;
     public static float yaw;
     private final NumberValue counts = new NumberValue("Attack Counts", 1, 5, 3, 1, this);
     private final NumberValue maxDelay = new NumberValue("Max Delay", 0, 1000, 1000, 50, this);
@@ -49,6 +50,7 @@ public class Velocity extends ClientModule {
         delay = false;
         packets.clear();
         attackQueue = 0;
+        jump = false;
     }
 
     /**
@@ -123,6 +125,11 @@ public class Velocity extends ClientModule {
             event.setForward(1.0f);
             event.setStrafe(0.0f);
         }
+
+        if (jump && mc.player.onGround()) {
+            event.setJump(true);
+            jump = false;
+        }
     }
 
     private void flush() {
@@ -135,6 +142,7 @@ public class Velocity extends ClientModule {
                 }
             }
             delay = false;
+            jump = true;
         } catch (Exception e) {
 
         }
