@@ -1,6 +1,7 @@
 package today.starain.module;
 
 import today.starain.module.impl.movement.Sprint;
+import today.starain.module.impl.render.FullBright;
 import today.starain.utils.wrapper.Wrapper;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ public class ModuleManager implements Wrapper {
 
     private ModuleManager() {
         modules.add(Sprint.newInstance());
+        modules.add(FullBright.newInstance());
     }
 
     // 如果直接去new一个对象这个zkm的indy没法混 直接是明文调用 所以要搞一个newInstance方法

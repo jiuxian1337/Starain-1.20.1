@@ -12,6 +12,13 @@ base {
 
 loom {
     accessWidenerPath = file("src/main/resources/starain.accesswidener")
+
+    runs {
+        client {
+            // DevAuth 默认关闭，靠这个属性打开。不想每次启动都登录就注释掉这行。
+            property 'devauth.enabled', 'true'
+        }
+    }
 }
 
 repositories {
@@ -20,6 +27,13 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
+    maven {
+        name = 'DevAuth'
+        url = 'https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1'
+        content {
+            includeGroup 'me.djtheredstoner'
+        }
+    }
 }
 
 dependencies {
@@ -30,6 +44,9 @@ dependencies {
 
     implementation("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
+
+    // 开发环境登录正版账号用，只在 runClient 时生效，不会打进发布的 jar。
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
 
     include(modImplementation('io.github.humbleui:types:0.2.0'))
     include(modImplementation('io.github.humbleui:skija-windows-x64:0.116.4'))

@@ -1,6 +1,8 @@
 package today.starain;
 
 import lombok.Getter;
+import today.starain.command.CommandManager;
+import today.starain.config.ConfigManager;
 import today.starain.event.api.EventManager;
 import today.starain.module.ModuleManager;
 
@@ -17,6 +19,8 @@ public class Starain {
 
     private EventManager eventManager;
     private ModuleManager moduleManager;
+    private CommandManager commandManager;
+    private ConfigManager configManager;
 
     private Starain() {
         instance = this;
@@ -31,6 +35,10 @@ public class Starain {
     private void init() {
         eventManager = EventManager.netInstance();
         moduleManager = ModuleManager.newInstance();
+        commandManager = CommandManager.newInstance();
+        // 必须在 moduleManager 之后：读配置要遍历模块。
+        configManager = ConfigManager.newInstance();
+        canPlaySound = true;
     }
 
 }
