@@ -3,10 +3,10 @@ package today.starain.mixin;
 import com.mojang.blaze3d.platform.Window;
 import io.github.humbleui.skija.*;
 import io.github.humbleui.skija.Paint;
-import io.github.humbleui.types.RRect;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,11 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import today.starain.Starain;
 import today.starain.event.impl.RenderSkiaEvent;
 import today.starain.module.impl.client.HUD;
+import today.starain.module.impl.client.ScoreboardModule;
 import today.starain.utils.render.shader.impl.KawaseBlur;
 import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.context.SkiaContext;
-
-import java.awt.*;
 
 @Mixin(Gui.class)
 public class MixinGui {
@@ -76,5 +75,14 @@ public class MixinGui {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+    }
+
+    @Inject(
+            method = "displayScoreboardSidebar(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/world/scores/Objective;)V",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void onDisplayScoreboardSidebar(GuiGraphics guiGraphics, Objective objective, CallbackInfo ci) {
+        ScoreboardModule.renderSB(guiGraphics, objective, ci);
     }
 }

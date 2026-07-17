@@ -5,10 +5,7 @@ import today.starain.Starain;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.KeyboardEvent;
 import today.starain.event.impl.MouseButtonEvent;
-import today.starain.module.impl.client.ArrayListModule;
-import today.starain.module.impl.client.ClickGuiModule;
-import today.starain.module.impl.client.HUD;
-import today.starain.module.impl.client.Notification;
+import today.starain.module.impl.client.*;
 import today.starain.module.impl.movement.Sprint;
 import today.starain.module.impl.render.FullBright;
 import today.starain.utils.render.BindUtils;
@@ -28,6 +25,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
+        modules.add(new ScoreboardModule());
         Starain.getInstance().getEventManager().register(this);
     }
 
