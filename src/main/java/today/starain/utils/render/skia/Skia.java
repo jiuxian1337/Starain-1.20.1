@@ -53,6 +53,55 @@ public class Skia implements Wrapper {
         getCanvas().drawRRect(RRect.makeXYWH(x, y, width, height, radius), getPaint(color));
     }
 
+    public static void drawRect(float x, float y, float width, float height, int argb) {
+        drawRect(x, y, width, height, new Color(argb, true));
+    }
+
+    public static void drawRoundedRect(float x, float y, float width, float height, float radius, int argb) {
+        drawRoundedRect(x, y, width, height, radius, new Color(argb, true));
+    }
+
+    public static void clipRect(float x, float y, float width, float height) {
+        getCanvas().clipRect(Rect.makeXYWH(x, y, width, height), ClipMode.INTERSECT, true);
+    }
+
+    /**
+     * 锚点就是基线，不像 drawText 那样按每个字符串自己的包围盒归一化，
+     * 所以同一个 baselineY 画出来的文字一定共线。
+     */
+    public static void drawBaselineText(String text, float x, float baselineY, int argb, Font font) {
+        if (text == null || text.isEmpty()) return;
+        drawStyledText(getCanvas(), text, x, baselineY, font, getPaint(new Color(argb, true)));
+    }
+
+    public static void drawBlur(float x, float y, float width, float height) {
+        drawBlurClipped(() -> getCanvas().clipRect(Rect.makeXYWH(x, y, width, height), ClipMode.INTERSECT, true));
+    }
+
+    public static void drawRoundedBlur(float x, float y, float width, float height, float radius) {
+        drawBlurClipped(() -> getCanvas().clipRRect(RRect.makeXYWH(x, y, width, height, radius), ClipMode.INTERSECT, true));
+    }
+
+    /**
+     * 把 KawaseBlur 那张全屏纹理贴回来，只留裁剪区。纹理是屏幕空间的，
+     * 而画布此刻带着缩放/平移，所以要用当前矩阵反推纹理该画在哪、多大。
+     */
+    private static void drawBlurClipped(Runnable clip) {
+        if (!HUD.isBlurEnabled()) return;
+        int textureId = KawaseBlur.INSTANCE.getTexture();
+        if (textureId == 0) return;
+
+        save();
+        clip.run();
+        float[] matrix = getCanvas().getLocalToDeviceAsMatrix33().getMat();
+        float drawX = -matrix[2] / matrix[0];
+        float drawY = -matrix[5] / matrix[4];
+        float screenW = Minecraft.getInstance().getWindow().getWidth() / matrix[0];
+        float screenH = Minecraft.getInstance().getWindow().getHeight() / matrix[4];
+        drawImage(textureId, drawX, drawY, screenW, screenH, 1.0F, SurfaceOrigin.BOTTOM_LEFT);
+        restore();
+    }
+
     public static void drawRoundedRectVarying(float x, float y, float width, float height, float topLeft,
                                               float topRight, float bottomRight, float bottomLeft, Color color) {
 
@@ -497,6 +546,30 @@ public class Skia implements Wrapper {
         Rect bounds = font.measureText(text);
         float textCenterY = y + (metrics.getAscent() - metrics.getDescent()) / 2 - metrics.getAscent();
         drawStyledText(getCanvas(), text, x - bounds.getLeft(), textCenterY, font, getPaint(color));
+    }
+
+    public static void drawFullCenteredTextPlain(String text, float x, float y, Color color, Font font) {
+        if (text == null || text.isEmpty()) return;
+        FontMetrics metrics = font.getMetrics();
+        Rect bounds = font.measureText(text);
+        float textCenterX = x - bounds.getLeft() - (bounds.getWidth() / 2);
+        float textCenterY = y + (metrics.getAscent() - metrics.getDescent()) / 2 - metrics.getAscent();
+        drawStyledText(getCanvas(), text, textCenterX, textCenterY, font, getPaint(color));
+    }
+
+    /**
+     * 只画模糊的那一层，不画清晰的文字——调用方自己在上面叠一层
+     * {@link #drawHeightCenteredTextPlain} 才能得到发光效果。
+     * 基线算法与 Plain 版完全一致，两者用同一个 y 才能重合。
+     */
+    public static void drawHeightCenteredTextGlow(String text, float x, float y, Color color, Font font, float radius) {
+        if (text == null || text.isEmpty()) return;
+        FontMetrics metrics = font.getMetrics();
+        Rect bounds = font.measureText(text);
+        Paint paint = getPaint(color);
+        paint.setImageFilter(ImageFilter.makeBlur(radius, radius, FilterTileMode.DECAL));
+        float textCenterY = y + (metrics.getAscent() - metrics.getDescent()) / 2 - metrics.getAscent();
+        drawStyledText(getCanvas(), text, x - bounds.getLeft(), textCenterY, font, paint);
     }
 
     public static void drawFullCenteredText(String text, float x, float y, Color color, Font font) {

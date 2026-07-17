@@ -1,7 +1,16 @@
 package today.starain.module;
 
+import org.lwjgl.glfw.GLFW;
+import today.starain.Starain;
+import today.starain.event.api.annotations.EventTarget;
+import today.starain.event.impl.KeyboardEvent;
+import today.starain.event.impl.MouseButtonEvent;
+import today.starain.module.impl.client.ArrayListModule;
+import today.starain.module.impl.client.ClickGuiModule;
+import today.starain.module.impl.client.HUD;
 import today.starain.module.impl.movement.Sprint;
 import today.starain.module.impl.render.FullBright;
+import today.starain.utils.render.BindUtils;
 import today.starain.utils.wrapper.Wrapper;
 
 import java.util.ArrayList;
@@ -11,8 +20,13 @@ public class ModuleManager implements Wrapper {
     private final List<ClientModule> modules = new ArrayList<>();
 
     private ModuleManager() {
+        // HUD 必须在表里：MixinGui 每帧都读它的 blur/shadow 参数，缺了会 NPE 并吃掉整个 RenderSkiaEvent。
+        modules.add(HUD.newInstance());
         modules.add(Sprint.newInstance());
         modules.add(FullBright.newInstance());
+        modules.add(ArrayListModule.newInstance());
+        modules.add(ClickGuiModule.newInstance());
+        Starain.getInstance().getEventManager().register(this);
     }
 
     // 如果直接去new一个对象这个zkm的indy没法混 直接是明文调用 所以要搞一个newInstance方法
@@ -50,5 +64,33 @@ public class ModuleManager implements Wrapper {
             }
         }
         return null;
+    }
+
+    @EventTarget
+    public void onKeyboard(KeyboardEvent event) {
+        if (event.getAction() != GLFW.GLFW_PRESS || event.getScreen() != null) {
+            return;
+        }
+        toggleByBind(BindUtils.keyboardCode(event.getKey()));
+    }
+
+    @EventTarget
+    public void onMouse(MouseButtonEvent event) {
+        if (event.getAction() != GLFW.GLFW_PRESS || event.getScreen() != null) {
+            return;
+        }
+        toggleByBind(BindUtils.mouseCode(event.getButton()));
+    }
+
+    // key 为 0 表示未绑定，绝不能被任何按键匹配上。
+    private void toggleByBind(int bindCode) {
+        if (bindCode == 0) {
+            return;
+        }
+        for (ClientModule module : modules) {
+            if (module.getKey() != 0 && module.getKey() == bindCode) {
+                module.toogle();
+            }
+        }
     }
 }

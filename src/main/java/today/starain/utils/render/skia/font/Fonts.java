@@ -4,8 +4,8 @@ import io.github.humbleui.skija.Font;
 
 public class Fonts {
 
-    private static final String REGULAR = "Inter-Regular-CJKsc.ttf";
-    private static final String MEDIUM = "Inter-Medium-CJKsc.ttf";
+    private static final String REGULAR = "GoogleSans-Regular.ttf";
+    private static final String MEDIUM = "GoogleSans-Medium.ttf";
     private static final String ICON_FILL = "MaterialSymbolsRounded_Fill.ttf";
     private static final String ICON = "MaterialSymbolsRounded.ttf";
 

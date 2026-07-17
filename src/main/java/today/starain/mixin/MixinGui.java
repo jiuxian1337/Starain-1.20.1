@@ -33,7 +33,9 @@ public class MixinGui {
     )
     private void onRenderAfterCrosshair(GuiGraphics guiGraphics, float partialTick, CallbackInfo ci) {
         try {
-            KawaseBlur.INSTANCE.draw(HUD.getBlurRadius(), HUD.getBlurIterations());
+            if (HUD.isBlurEnabled()) {
+                KawaseBlur.INSTANCE.draw(HUD.getBlurRadius(), HUD.getBlurIterations());
+            }
             SkiaContext.draw((context) -> {
                 Skia.save();
                 Skia.scale((float) Minecraft.getInstance().getWindow().getGuiScale());

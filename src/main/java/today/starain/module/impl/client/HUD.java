@@ -5,6 +5,7 @@ import today.starain.module.Category;
 import today.starain.module.ClientModule;
 import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ColorValue;
+import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
 import java.awt.*;
@@ -19,14 +20,45 @@ public class HUD extends ClientModule {
     private final BooleanValue shadow = new BooleanValue("Shadow", false, this);
     private final ColorValue shadowColor = new ColorValue("Shadow Color", new Color(0, 0, 0, 120), this, shadow::get);
 
+    private final ModeValue themeMode = new ModeValue("Theme Mode", "Gradient", new String[]{"Solid", "Gradient", "Rainbow"}, this);
+    private final ColorValue themePrimary = new ColorValue("Theme Primary", new Color(91, 207, 250), this);
+    private final ColorValue themeSecondary = new ColorValue("Theme Secondary", new Color(245, 171, 185), this, () -> !themeMode.isMode("Solid"));
+    private final NumberValue themeSpeed = new NumberValue("Theme Speed", 1F, 50F, 25F, 1F, this, () -> !themeMode.isMode("Solid"));
+    private final NumberValue themeSpread = new NumberValue("Theme Spread", 0F, 50F, 5F, 1F, this, () -> !themeMode.isMode("Solid"));
+
     public HUD() {
         setName("HUD");
         setCategory(Category.CLIENT);
     }
 
+    // 如果直接去new一个对象这个zkm的indy没法混 直接是明文调用 所以要搞一个newInstance方法
+    public static HUD newInstance() {
+        return new HUD();
+    }
+
     @Override
     protected void onEnable() {
         setEnabled(false);
+    }
+
+    public String getThemeMode() {
+        return themeMode.get();
+    }
+
+    public Color getThemePrimary() {
+        return themePrimary.get();
+    }
+
+    public Color getThemeSecondary() {
+        return themeSecondary.get();
+    }
+
+    public int getThemeSpeed() {
+        return themeSpeed.get().intValue();
+    }
+
+    public int getThemeSpread() {
+        return themeSpread.get().intValue();
     }
 
     public static boolean isBlurEnabled() {
