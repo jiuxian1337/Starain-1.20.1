@@ -10,8 +10,11 @@
     "MixinPlayer"
   ],
   "client": [
+    "MixinClientPacketListener",
+    "MixinCommandSuggestions",
     "MixinGui",
     "MixinKeyboardInput",
+    "MixinLightTexture",
     "MixinLivingEntityRenderer",
     "MixinLocalPlayer",
     "MixinMinecraft",
