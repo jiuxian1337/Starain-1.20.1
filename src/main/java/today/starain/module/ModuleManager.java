@@ -13,10 +13,7 @@ import today.starain.module.impl.misc.Target;
 import today.starain.module.impl.misc.Teams;
 import today.starain.module.impl.movement.NoJumpDelay;
 import today.starain.module.impl.movement.Sprint;
-import today.starain.module.impl.player.AutoTools;
-import today.starain.module.impl.player.ChestStealer;
-import today.starain.module.impl.player.InvManager;
-import today.starain.module.impl.player.Scaffold;
+import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.FullBright;
 import today.starain.utils.render.BindUtils;
 import today.starain.utils.wrapper.Wrapper;
@@ -48,6 +45,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new ChestStealer());
         modules.add(new InvManager());
         modules.add(new TargetHUD());
+        modules.add(new NoFall());
         Starain.getInstance().getEventManager().register(this);
     }
 
