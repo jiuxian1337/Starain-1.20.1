@@ -46,7 +46,7 @@ public class KillAura extends ClientModule {
     private final NumberValue switchDelay = new NumberValue("Switch delay", 0.0, 500.0, 100.0, 1.0, this, () -> mode.isMode("Switch"));
     private final ModeValue priority = new ModeValue("Priority", "Range", new String[]{"Health", "FoV", "Range", "None"}, this);
     private final TimerUtils switchTimer = new TimerUtils();
-    private int targetNumber;
+    public static int targetNumber;
     private long lastAttackTime;
     private int attacks;
 
@@ -155,5 +155,9 @@ public class KillAura extends ClientModule {
     @Override
     public String getSuffix() {
         return mode.get();
+    }
+
+    public static Entity getTarget() {
+        return targets.get(targetNumber);
     }
 }

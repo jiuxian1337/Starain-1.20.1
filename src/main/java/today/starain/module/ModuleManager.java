@@ -13,6 +13,9 @@ import today.starain.module.impl.misc.Target;
 import today.starain.module.impl.misc.Teams;
 import today.starain.module.impl.movement.NoJumpDelay;
 import today.starain.module.impl.movement.Sprint;
+import today.starain.module.impl.player.AutoTools;
+import today.starain.module.impl.player.ChestStealer;
+import today.starain.module.impl.player.InvManager;
 import today.starain.module.impl.player.Scaffold;
 import today.starain.module.impl.render.FullBright;
 import today.starain.utils.render.BindUtils;
@@ -41,6 +44,10 @@ public class ModuleManager implements Wrapper {
         modules.add(new Teams());
         modules.add(new Scaffold());
         modules.add(new NoJumpDelay());
+        modules.add(new AutoTools());
+        modules.add(new ChestStealer());
+        modules.add(new InvManager());
+        modules.add(new TargetHUD());
         Starain.getInstance().getEventManager().register(this);
     }
 
@@ -97,7 +104,6 @@ public class ModuleManager implements Wrapper {
         toggleByBind(BindUtils.mouseCode(event.button()));
     }
 
-    // key 为 0 表示未绑定，绝不能被任何按键匹配上。
     private void toggleByBind(int bindCode) {
         if (bindCode == 0) {
             return;
