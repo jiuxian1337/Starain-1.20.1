@@ -18,7 +18,6 @@ import java.util.Locale;
  * 所以匹配一律走 {@link #normalize} 去掉非字母数字再比。
  */
 public final class ValueEditor {
-
     private ValueEditor() {
     }
 

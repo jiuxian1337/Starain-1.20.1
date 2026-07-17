@@ -138,13 +138,13 @@ public final class ArrayListModule extends ClientModule {
             }
         }
 
-        // 关掉的模块留在表里播完淡出动画再移除。
         for (Map.Entry<ClientModule, SmoothAnimationTimer> entry : animations.entrySet()) {
             if (!enabled.contains(entry.getKey())) {
                 entry.getValue().target = 0.0F;
             }
             entry.getValue().update(true);
         }
+        // 关掉的模块留在表里播完淡出动画再移除。
         animations.entrySet().removeIf(entry -> entry.getValue().target == 0.0F && entry.getValue().value <= 0.001F);
 
         if (animations.isEmpty()) {
