@@ -2,6 +2,7 @@ package today.starain.utils.render.skia.font;
 
 import io.github.humbleui.skija.Data;
 import io.github.humbleui.skija.Font;
+import io.github.humbleui.skija.FontEdging;
 import io.github.humbleui.skija.Typeface;
 import today.starain.utils.render.skia.utils.SkiaUtils;
 
@@ -25,7 +26,10 @@ public class FontHelper {
 
     public static Font load(String font, float size, FontType fontType) {
         Typeface typeface = getTypeface(font, fontType);
-        return new Font(typeface, size);
+        Font load = new Font(typeface, size);
+        load.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
+        load.setSubpixel(true);
+        return load;
     }
 
     public static Font load(String font, float size) {

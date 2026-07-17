@@ -31,11 +31,6 @@ public class HUD extends ClientModule {
         setCategory(Category.CLIENT);
     }
 
-    // 如果直接去new一个对象这个zkm的indy没法混 直接是明文调用 所以要搞一个newInstance方法
-    public static HUD newInstance() {
-        return new HUD();
-    }
-
     @Override
     protected void onEnable() {
         setEnabled(false);

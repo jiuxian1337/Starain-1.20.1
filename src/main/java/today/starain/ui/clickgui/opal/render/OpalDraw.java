@@ -104,9 +104,9 @@ public final class OpalDraw {
 
     private static Font font(String str, float size, boolean bold) {
         if (containsNonLatin(str)) {
-            return bold ? Fonts.getMedium(size) : Fonts.getRegular(size);
+            return bold ? Fonts.getSfProMedium(size) : Fonts.getSfProNormal(size);
         }
-        return bold ? Fonts.getMedium(size) : Fonts.getRegular(size);
+        return bold ? Fonts.getSfProMedium(size) : Fonts.getSfProNormal(size);
     }
 
     private static boolean containsNonLatin(String str) {

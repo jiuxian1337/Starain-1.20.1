@@ -13,12 +13,12 @@ base {
 loom {
     accessWidenerPath = file("src/main/resources/starain.accesswidener")
 
-    runs {
-        client {
-            // DevAuth 默认关闭，靠这个属性打开。不想每次启动都登录就注释掉这行。
-            property 'devauth.enabled', 'true'
-        }
-    }
+//    runs {
+//        client {
+//            // DevAuth 默认关闭，靠这个属性打开。不想每次启动都登录就注释掉这行。
+//            property 'devauth.enabled', 'true'
+//        }
+//    }
 }
 
 repositories {

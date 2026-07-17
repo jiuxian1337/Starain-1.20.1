@@ -12,11 +12,6 @@ public class Starain {
     public static final String VERSION = "260717";
     @Getter
     private static Starain instance;
-
-    // 防止在初始化模块的时候噔一声
-    @Getter
-    private static boolean canPlaySound = false;
-
     private EventManager eventManager;
     private ModuleManager moduleManager;
     private CommandManager commandManager;
@@ -36,9 +31,7 @@ public class Starain {
         eventManager = EventManager.netInstance();
         moduleManager = ModuleManager.newInstance();
         commandManager = CommandManager.newInstance();
-        // 必须在 moduleManager 之后：读配置要遍历模块。
         configManager = ConfigManager.newInstance();
-        canPlaySound = true;
     }
 
 }

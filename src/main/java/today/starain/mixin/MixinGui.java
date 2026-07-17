@@ -49,12 +49,14 @@ public class MixinGui {
                 // 渲染阴影
                 if (HUD.isShadowEnabled()) {
                     Paint paint = new Paint();
+                    paint.setAntiAlias(true);
                     paint.setARGB(HUD.getShadowColor().getAlpha(), HUD.getShadowColor().getRed(), HUD.getShadowColor().getGreen(), HUD.getShadowColor().getBlue());
                     paint.setImageFilter(ImageFilter.makeBlur(2.5F, 2.5F, FilterTileMode.DECAL));
                     Skia.save();
                     Skia.getCanvas().clipPath(Skia.shadowPath, ClipMode.DIFFERENCE, true);
                     Skia.getCanvas().drawPath(Skia.shadowPath, paint);
                     Skia.restore();
+                    Skia.shadowPath = new Path();
                 }
 
                 // 渲染模糊
@@ -65,6 +67,7 @@ public class MixinGui {
                     Skia.drawImage(KawaseBlur.INSTANCE.getTexture(), 0, 0, window.getWidth() / (float) window.getGuiScale(), window.getHeight() / (float) window.getGuiScale(), 1F,
                             SurfaceOrigin.BOTTOM_LEFT);
                     Skia.restore();
+                    Skia.blurPath = new Path();
                 }
 
                 Starain.getInstance().getEventManager().call(new RenderSkiaEvent(guiGraphics, partialTick));

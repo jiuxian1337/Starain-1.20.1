@@ -112,14 +112,14 @@ public final class ModulePanel extends OpalComponent {
         float r = OpalTheme.radius();
 
         if (!lastModule) {
-            Skia.drawBlur(x, y, width, height);
+            Skia.drawGuiBlur(x, y, width, height);
             Skia.drawRect(x, y, width, height, base);
             OpalDraw.gradientRect(x, y, width, height, accent1, accent2, 0);
             if (showHover) {
                 Skia.drawRect(x, y, width, height, hoverOverlay);
             }
         } else {
-            Skia.drawRoundedBlur(x, y, width, height, r);
+            Skia.drawGuiRoundedBlur(x, y, width, height, r);
             Skia.drawRoundedRectVarying(x, y, width, height, 0, 0, r, r, OpalDraw.color(base));
             OpalDraw.gradientRoundedRectVarying(x, y, width, height, 0, 0, r, r, accent1, accent2, 0);
             if (showHover) {

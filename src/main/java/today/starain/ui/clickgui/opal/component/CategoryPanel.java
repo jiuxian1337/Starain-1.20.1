@@ -50,7 +50,7 @@ public final class CategoryPanel extends OpalComponent {
         float r = OpalTheme.radius();
 
         OpalDraw.alpha(openValue, () -> OpalDraw.scissor(x, y, width, scissorHeight, () -> {
-            Skia.drawRoundedBlur(x, y + scrollOffset, width, height, r);
+            Skia.drawGuiRoundedBlur(x, y + scrollOffset, width, height, r);
             Skia.drawRoundedRectVarying(x, y + scrollOffset, width, height, r, r, 0, 0,
                     OpalDraw.color(OpalDraw.opacity(OpalTheme.HEADER_BG, OpalTheme.headerBgOpacity())));
 

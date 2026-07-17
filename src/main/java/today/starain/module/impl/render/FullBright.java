@@ -19,11 +19,6 @@ public final class FullBright extends ClientModule {
         setCategory(Category.RENDER);
     }
 
-    // 如果直接去new一个对象这个zkm的indy没法混 直接是明文调用 所以要搞一个newInstance方法
-    public static FullBright newInstance() {
-        return new FullBright();
-    }
-
     @Override
     protected void onEnable() {
         if (mc.options != null) {

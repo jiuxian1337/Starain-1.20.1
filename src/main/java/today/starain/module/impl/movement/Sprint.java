@@ -14,10 +14,6 @@ public class Sprint extends ClientModule {
         setCategory(Category.MOVEMENT);
     }
 
-    public static Sprint newInstance() {
-        return new Sprint();
-    }
-
     @EventTarget
     @EventPriority(Priority.HIGHEST)
     public void onMotion(MotionEvent e) {

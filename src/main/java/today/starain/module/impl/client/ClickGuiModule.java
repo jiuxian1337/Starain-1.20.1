@@ -1,5 +1,7 @@
 package today.starain.module.impl.client;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.lwjgl.glfw.GLFW;
 import today.starain.Starain;
 import today.starain.module.Category;
@@ -10,6 +12,8 @@ import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
 public final class ClickGuiModule extends ClientModule {
+    @Setter
+    @Getter
     private static volatile ClientModule bindingTarget;
 
     private final ModeValue mode = new ModeValue("Mode", "Opal", new String[]{"Opal"}, this);
@@ -32,10 +36,6 @@ public final class ClickGuiModule extends ClientModule {
         setKey(GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 
-    public static ClickGuiModule newInstance() {
-        return new ClickGuiModule();
-    }
-
     private static ClickGuiModule get() {
         Starain instance = Starain.getInstance();
         return instance == null ? null : instance.getModuleManager().getModule(ClickGuiModule.class);
@@ -43,14 +43,6 @@ public final class ClickGuiModule extends ClientModule {
 
     public static boolean isBindingMode() {
         return bindingTarget != null;
-    }
-
-    public static ClientModule getBindingTarget() {
-        return bindingTarget;
-    }
-
-    public static void setBindingTarget(ClientModule target) {
-        bindingTarget = target;
     }
 
     public static float getGuiX() {

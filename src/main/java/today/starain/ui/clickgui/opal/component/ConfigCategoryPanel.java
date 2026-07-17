@@ -60,7 +60,7 @@ public final class ConfigCategoryPanel extends OpalComponent {
 
         OpalDraw.alpha(openValue, () -> OpalDraw.scissor(x, y, width, scissorHeight, () -> {
             // Header
-            Skia.drawRoundedBlur(x, y + scrollOffset, width, height, OpalTheme.radius());
+            Skia.drawGuiRoundedBlur(x, y + scrollOffset, width, height, OpalTheme.radius());
             Skia.drawRoundedRectVarying(x, y + scrollOffset, width, height, OpalTheme.radius(), OpalTheme.radius(), 0, 0,
                     OpalDraw.color(OpalDraw.opacity(OpalTheme.HEADER_BG, OpalTheme.headerBgOpacity())));
             OpalDraw.text(Category.CONFIG.getName(), x + 5, y + scrollOffset + 13, OpalTheme.FONT_HEADER, OpalTheme.TEXT, true);
@@ -70,7 +70,7 @@ public final class ConfigCategoryPanel extends OpalComponent {
             if (!configs.isEmpty()) {
                 float listY = y + height + scrollOffset;
                 float listH = configs.size() * height;
-                Skia.drawBlur(x, listY, width, listH);
+                Skia.drawGuiBlur(x, listY, width, listH);
                 Skia.drawRect(x, listY, width, listH, OpalDraw.opacity(OpalTheme.ROW_BG, OpalTheme.rowBgOpacity()));
             }
             for (int i = 0; i < configs.size(); i++) {
@@ -89,7 +89,7 @@ public final class ConfigCategoryPanel extends OpalComponent {
 
             // Action row (rounded bottom)
             float actionY = y + height + configs.size() * height + scrollOffset;
-            Skia.drawRoundedBlur(x, actionY, width, height, OpalTheme.radius());
+            Skia.drawGuiRoundedBlur(x, actionY, width, height, OpalTheme.radius());
             Skia.drawRoundedRectVarying(x, actionY, width, height, 0, 0, OpalTheme.radius(), OpalTheme.radius(),
                     OpalDraw.color(OpalDraw.opacity(OpalTheme.ROW_BG, OpalTheme.rowBgOpacity())));
             String[] icons = {Icon.ADD, Icon.SAVE, Icon.FILE_DOWNLOAD, Icon.DELETE, Icon.FOLDER_OPEN, Icon.REFRESH};

@@ -1,6 +1,5 @@
 package today.starain.utils.render.skia;
 
-import com.mojang.blaze3d.platform.Window;
 import io.github.humbleui.skija.*;
 import io.github.humbleui.skija.Canvas;
 import io.github.humbleui.skija.Font;
@@ -74,11 +73,11 @@ public class Skia implements Wrapper {
         drawStyledText(getCanvas(), text, x, baselineY, font, getPaint(new Color(argb, true)));
     }
 
-    public static void drawBlur(float x, float y, float width, float height) {
+    public static void drawGuiBlur(float x, float y, float width, float height) {
         drawBlurClipped(() -> getCanvas().clipRect(Rect.makeXYWH(x, y, width, height), ClipMode.INTERSECT, true));
     }
 
-    public static void drawRoundedBlur(float x, float y, float width, float height, float radius) {
+    public static void drawGuiRoundedBlur(float x, float y, float width, float height, float radius) {
         drawBlurClipped(() -> getCanvas().clipRRect(RRect.makeXYWH(x, y, width, height, radius), ClipMode.INTERSECT, true));
     }
 
@@ -165,6 +164,7 @@ public class Skia implements Wrapper {
 
         if (imageHelper.load(textureId, width, height, origin)) {
             Paint paint = new Paint();
+            paint.setAntiAlias(true);
             paint.setAlpha((int) (255 * alpha));
             getCanvas().drawImageRect(imageHelper.get(textureId), Rect.makeXYWH(x, y, width, height), paint);
         }
@@ -404,6 +404,7 @@ public class Skia implements Wrapper {
                 (color1.getBlue() + color2.getBlue()) / 2);
 
         Paint paint = new Paint();
+        paint.setAntiAlias(true);
 
         paint.setShader(Shader.makeLinearGradient(new Point(startX, startY), new Point(endX, endY),
                 new int[]{skColor1, skColorMid, skColor2}, new float[]{0, 0.5f, 1}));
@@ -498,24 +499,19 @@ public class Skia implements Wrapper {
     public static void drawText(String text, float x, float y, Color color, Font font) {
         if (text == null || text.isEmpty()) return;
         Paint paint = getPaint(color);
-        paint.setImageFilter(ImageFilter.makeBlur(1.0F, 1.0F, FilterTileMode.DECAL));
         Rect bounds = font.measureText(text);
         float bx = x - bounds.getLeft();
         float by = y - bounds.getTop();
         drawStyledText(getCanvas(), text, bx, by, font, paint);
-        drawStyledText(getCanvas(), text, x - bounds.getLeft(), y - bounds.getTop(), font, getPaint(color));
     }
 
     public static void drawCenteredText(String text, float x, float y, Color color, Font font) {
         if (text == null || text.isEmpty()) return;
         Paint paint = getPaint(color);
-        paint.setImageFilter(ImageFilter.makeBlur(1.0F, 1.0F, FilterTileMode.DECAL));
         Rect bounds = font.measureText(text);
         float bx = x - bounds.getLeft();
         float by = y - bounds.getTop();
         drawStyledText(getCanvas(), text, bx, by, font, paint);
-        drawStyledText(getCanvas(), text, x - bounds.getLeft() - (bounds.getWidth() / 2), y - bounds.getTop(), font,
-                getPaint(color));
     }
 
     public static void drawHeightCenteredText(String text, float x, float y, Color color, Font font) {
@@ -523,15 +519,10 @@ public class Skia implements Wrapper {
 
         FontMetrics metrics = font.getMetrics();
         Paint paint = getPaint(color);
-        paint.setImageFilter(ImageFilter.makeBlur(1.0F, 1.0F, FilterTileMode.DECAL));
         Rect bounds = font.measureText(text);
         float bx = x - bounds.getLeft();
         float by = y - bounds.getTop();
         drawStyledText(getCanvas(), text, bx, by, font, paint);
-
-        float textCenterY = y + (metrics.getAscent() - metrics.getDescent()) / 2 - metrics.getAscent();
-
-        drawStyledText(getCanvas(), text, x - bounds.getLeft(), textCenterY, font, getPaint(color));
     }
 
     public static void drawTextPlain(String text, float x, float y, Color color, Font font) {
@@ -624,6 +615,7 @@ public class Skia implements Wrapper {
     private static Paint getPaint(Color color) {
         Paint paint = new Paint();
         paint.setARGB(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue());
+        paint.setAntiAlias(true);
         return paint;
     }
 
@@ -673,6 +665,7 @@ public class Skia implements Wrapper {
 
         Paint paint = new Paint();
         paint.setAlpha(alpha);
+        paint.setAntiAlias(true);
 
         getCanvas().saveLayer(null, paint);
     }

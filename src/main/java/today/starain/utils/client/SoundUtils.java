@@ -9,7 +9,6 @@ import java.io.IOException;
 public class SoundUtils {
 
     public static void playSound(String path, float volume) {
-        if (!Starain.isCanPlaySound()) return;
         Multithreading.runAsync((() -> {
             try {
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(SoundUtils.class.getResourceAsStream("/assets/starain/sounds/" + path));

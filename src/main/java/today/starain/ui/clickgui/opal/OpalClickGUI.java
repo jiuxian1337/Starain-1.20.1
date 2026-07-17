@@ -174,7 +174,7 @@ public final class OpalClickGUI extends Screen {
         float top = OpalTheme.PANEL_TOP - (1f - progress) * 6f;
         float r = OpalTheme.radius();
         OpalDraw.alpha(progress, () -> {
-            Skia.drawRoundedBlur(x, top, w, h, r);
+            Skia.drawGuiRoundedBlur(x, top, w, h, r);
             Skia.drawRoundedRect(x, top, w, h, r,
                     OpalDraw.color(OpalDraw.opacity(OpalTheme.ROW_BG, OpalTheme.rowBgOpacity())));
 

@@ -8,6 +8,7 @@ import today.starain.event.impl.MouseButtonEvent;
 import today.starain.module.impl.client.ArrayListModule;
 import today.starain.module.impl.client.ClickGuiModule;
 import today.starain.module.impl.client.HUD;
+import today.starain.module.impl.client.Notification;
 import today.starain.module.impl.movement.Sprint;
 import today.starain.module.impl.render.FullBright;
 import today.starain.utils.render.BindUtils;
@@ -21,11 +22,12 @@ public class ModuleManager implements Wrapper {
 
     private ModuleManager() {
         // HUD 必须在表里：MixinGui 每帧都读它的 blur/shadow 参数，缺了会 NPE 并吃掉整个 RenderSkiaEvent。
-        modules.add(HUD.newInstance());
-        modules.add(Sprint.newInstance());
-        modules.add(FullBright.newInstance());
-        modules.add(ArrayListModule.newInstance());
-        modules.add(ClickGuiModule.newInstance());
+        modules.add(new HUD());
+        modules.add(new Sprint());
+        modules.add(new FullBright());
+        modules.add(new ArrayListModule());
+        modules.add(new ClickGuiModule());
+        modules.add(new Notification());
         Starain.getInstance().getEventManager().register(this);
     }
 

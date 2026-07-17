@@ -5,6 +5,8 @@ import lombok.Setter;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import today.starain.Starain;
+import today.starain.module.impl.client.Notification;
+import today.starain.utils.animation.SmoothAnimationTimer;
 import today.starain.utils.wrapper.Wrapper;
 import today.starain.value.Value;
 
@@ -20,13 +22,11 @@ public class ClientModule implements Wrapper {
     private boolean enabled;
     private final List<Value> values = new ArrayList<>();
 
-    protected ClientModule() {
+    // ArrayList的动画
+    public final SmoothAnimationTimer progress = new SmoothAnimationTimer(100, 0, 0.4f);
 
-    }
+    public ClientModule() {
 
-    // 如果直接去new一个对象这个zkm的indy没法混 直接是明文调用 所以要搞一个newInstance方法
-    public static ClientModule newInstance() {
-        return new ClientModule();
     }
 
     protected void onEnable() {
@@ -47,21 +47,13 @@ public class ClientModule implements Wrapper {
         }
 
         this.enabled = enabled;
+        Notification.playToggleSound(enabled);
         if (enabled) {
             Starain.getInstance().getEventManager().register(this);
-            playToggleSound(SoundEvents.WOODEN_BUTTON_CLICK_ON, 1.3F);
             onEnable();
         } else {
             Starain.getInstance().getEventManager().unregister(this);
-            playToggleSound(SoundEvents.WOODEN_BUTTON_CLICK_OFF, 0.8F);
             onDisable();
-        }
-    }
-
-    // 读配置时会在 Minecraft 构造阶段调 setEnabled，那时 mc.player 还是 null。
-    private void playToggleSound(SoundEvent sound, float pitch) {
-        if (Starain.isCanPlaySound() && mc.player != null) {
-            mc.player.playSound(sound, 0.5F, pitch);
         }
     }
 
