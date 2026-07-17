@@ -158,6 +158,7 @@ public class KillAura extends ClientModule {
     }
 
     public static Entity getTarget() {
+        if (targets == null || targets.isEmpty()) return null;
         return targets.get(targetNumber);
     }
 }

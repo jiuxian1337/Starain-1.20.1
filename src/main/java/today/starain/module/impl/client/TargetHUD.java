@@ -16,6 +16,7 @@ import today.starain.event.impl.RenderSkiaEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
 import today.starain.module.impl.combat.KillAura;
+import today.starain.ui.Design;
 import today.starain.ui.clickgui.opal.OpalClickGUI;
 import today.starain.utils.animation.SmoothAnimationTimer;
 import today.starain.utils.render.skia.Skia;
@@ -39,12 +40,11 @@ public class TargetHUD extends ClientModule {
 
     @EventTarget
     public void onRender(RenderSkiaEvent event) {
-
+        alpha.update(true);
         if (mc.screen instanceof OpalClickGUI) {
             target = mc.player;
             alpha.value = 255.0f;
         }
-        alpha.update(true);
         if (alpha.value < 1.0f) return;
         heal.update(true);
         hurtAlpha.update(true);
@@ -63,9 +63,11 @@ public class TargetHUD extends ClientModule {
         try (Paint layerPaint = new Paint()) {
             layerPaint.setAlpha((int) alpha.value);
             Skia.getCanvas().saveLayer(Rect.makeXYWH(x - 10, y - 10, width + 20, height + 20), layerPaint);
-            Skia.drawShadow(x, y, width, height, 6.0f);
-            Skia.drawBlur(x, y, width, height, 6.0f);
-            Skia.drawRoundedRect(x, y, width, height, 6.0f, new Color(0, 0, 0, 100));
+            if (alpha.value >= 75f) {
+                Skia.drawShadow(x, y, width, height, 6.0f);
+                Skia.drawBlur(x, y, width, height, 6.0f);
+            }
+            Skia.drawRoundedRect(x, y, width, height, 6.0f, Design.BACKGROUND_COLOR);
             Skia.drawPlayerHead(target, x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f);
             if (hurtAlpha.value > 1.0f) {
                 Skia.drawRoundedRect(x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f, new Color(255, 80, 80, (int) hurtAlpha.value));
@@ -78,7 +80,7 @@ public class TargetHUD extends ClientModule {
             float healthWidth = (healBarWidth / 20.0f) * heal.value;
             Skia.drawRect(x + 40.0f, y + 30.5f, healthWidth, 5.0f, new Color(200, 200, 200));
             Skia.restore();
-            Skia.drawText(name, x + 40.0f, y + 4.5f, new Color(255, 255, 255), miSans);
+            Skia.drawText(name, x + 40.0f, y + 4.5f, Design.TEXT_COLOR, miSans);
             Skia.drawText("\ue87d", x + 40.0f, y + 18f, new Color(200, 200, 200), iconFill);
             Skia.drawText(String.format("%.2f", heal.value), x + 40.0f + heartIconWidth, y + 17.5f, new Color(200, 200, 200), miSans);
             path.close();
@@ -95,7 +97,7 @@ public class TargetHUD extends ClientModule {
             target = player;
             heal.target = player.getHealth();
             hurtAlpha.target = player.hurtTime > 0 ? 120.0f : 0.0f;
-        } else if (module.isEnabled() && KillAura.getTarget() instanceof AbstractClientPlayer player) {
+        } else if (module.isEnabled() && KillAura.getTarget() != null && KillAura.getTarget() instanceof AbstractClientPlayer player) {
             alpha.target = 255.0f;
             target = player;
             heal.target = player.getHealth();
