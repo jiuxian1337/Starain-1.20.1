@@ -103,9 +103,14 @@ public final class ClickGuiModule extends ClientModule {
         return m != null ? m.animSpeed.get().floatValue() : 1.0F;
     }
 
+    private OpalClickGUI opalGui;
+
     @Override
     protected void onEnable() {
-        mc.setScreen(new OpalClickGUI());
+        if (opalGui == null) {
+            opalGui = new OpalClickGUI();
+        }
+        mc.setScreen(opalGui);
         setEnabled(false);
     }
 

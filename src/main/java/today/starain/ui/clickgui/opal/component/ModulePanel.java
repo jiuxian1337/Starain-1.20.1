@@ -197,6 +197,7 @@ public final class ModulePanel extends OpalComponent {
 
     @Override
     public void init() {
+        selectingBind = false;
         propertyProvider.init();
     }
 

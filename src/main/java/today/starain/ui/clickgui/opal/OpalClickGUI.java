@@ -52,6 +52,8 @@ public final class OpalClickGUI extends Screen {
     @Override
     protected void init() {
         closing = false;
+        searchActive = false;
+        searchQuery.setLength(0);
         searchAnimation = new Animation(Easing.EASE_OUT_SINE, 260);
         categoryPanels.forEach(OpalComponent::init);
     }
