@@ -4,16 +4,16 @@ import io.github.humbleui.skija.Font;
 
 public class Fonts {
 
-    public static Font getSfProNormal(float size) {
-        return FontHelper.load("SFPRODISPLAYREGULAR.ttf", size);
+    public static Font getNormal(float size) {
+        return FontHelper.load("NotoSansSC-Regular.ttf", size);
     }
 
-    public static Font getSfProMedium(float size) {
-        return FontHelper.load("SFPRODISPLAYMEDIUM.ttf", size);
+    public static Font getMedium(float size) {
+        return FontHelper.load("NotoSansSC-Medium.ttf", size);
     }
 
-    public static Font getSfProBold(float size) {
-        return FontHelper.load("SFPRODISPLAYBOLD.ttf", size);
+    public static Font getBold(float size) {
+        return FontHelper.load("NotoSansSC-Bold.ttf", size);
     }
 
     public static Font getBorel(float size) {

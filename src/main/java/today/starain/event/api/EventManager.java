@@ -119,17 +119,8 @@ public class EventManager {
     }
 
     /**
-     * A pre-resolved handler: an already-accessible method bound to its target instance.
-     */
-    private static final class Listener {
-        final Object target;
-        final Method method;
-        final int priority;
-
-        Listener(Object target, Method method, int priority) {
-            this.target = target;
-            this.method = method;
-            this.priority = priority;
-        }
+         * A pre-resolved handler: an already-accessible method bound to its target instance.
+         */
+        private record Listener(Object target, Method method, int priority) {
     }
 }

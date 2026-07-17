@@ -10,11 +10,9 @@ import java.util.function.BooleanSupplier;
 
 public final class ToggleSwitch {
 
-    private Animation toggleAnimation;
-
     private final Runnable toggleAction;
     private final BooleanSupplier stateSupplier;
-
+    private Animation toggleAnimation;
     private int colorOn = OpalTheme.first();
     private int colorOff = 0xff3c3c3c;
 

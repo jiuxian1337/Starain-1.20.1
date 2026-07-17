@@ -2,7 +2,6 @@ package today.starain.mixin;
 
 import com.mojang.blaze3d.platform.Window;
 import io.github.humbleui.skija.*;
-import io.github.humbleui.skija.Paint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
@@ -45,6 +44,17 @@ public class MixinGui {
 
                 // 但是也有些缺点 两帧的位置差距太大可能会导致字在前面跑模糊在后面追
 
+                // 渲染模糊
+                if (HUD.isBlurEnabled()) {
+                    Window window = Minecraft.getInstance().getWindow();
+                    Skia.save();
+                    Skia.getCanvas().clipPath(Skia.blurPath, ClipMode.INTERSECT, true);
+                    Skia.drawImage(KawaseBlur.INSTANCE.getTexture(), 0, 0, window.getWidth() / (float) window.getGuiScale(), window.getHeight() / (float) window.getGuiScale(), 1F,
+                            SurfaceOrigin.BOTTOM_LEFT);
+                    Skia.restore();
+                    Skia.blurPath = new Path();
+                }
+
                 // 渲染阴影
                 if (HUD.isShadowEnabled()) {
                     Paint paint = new Paint();
@@ -56,17 +66,6 @@ public class MixinGui {
                     Skia.getCanvas().drawPath(Skia.shadowPath, paint);
                     Skia.restore();
                     Skia.shadowPath = new Path();
-                }
-
-                // 渲染模糊
-                if (HUD.isBlurEnabled()) {
-                    Window window = Minecraft.getInstance().getWindow();
-                    Skia.save();
-                    Skia.getCanvas().clipPath(Skia.blurPath, ClipMode.INTERSECT, true);
-                    Skia.drawImage(KawaseBlur.INSTANCE.getTexture(), 0, 0, window.getWidth() / (float) window.getGuiScale(), window.getHeight() / (float) window.getGuiScale(), 1F,
-                            SurfaceOrigin.BOTTOM_LEFT);
-                    Skia.restore();
-                    Skia.blurPath = new Path();
                 }
 
                 Starain.getInstance().getEventManager().call(new RenderSkiaEvent(guiGraphics, partialTick));

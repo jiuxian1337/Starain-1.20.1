@@ -23,10 +23,8 @@ import java.util.List;
 
 public final class OpalClickGUI extends Screen {
 
-    public static boolean displayingBinds;
-
     private static final float SEARCH_BAR_HEIGHT = 24f;
-
+    public static boolean displayingBinds;
     private final List<OpalComponent> categoryPanels = new ArrayList<>();
     private final StringBuilder searchQuery = new StringBuilder();
     private boolean closing;

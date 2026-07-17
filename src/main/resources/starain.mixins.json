@@ -4,22 +4,25 @@
   "package": "today.starain.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "MixinConnection",
     "MixinEntity",
     "MixinItem",
     "MixinLivingEntity",
     "MixinPlayer"
   ],
   "client": [
+    "MixinClientLevel",
     "MixinClientPacketListener",
     "MixinCommandSuggestions",
     "MixinGui",
     "MixinKeyboardHandler",
     "MixinKeyboardInput",
     "MixinLightTexture",
-    "MixinMouseHandler",
     "MixinLivingEntityRenderer",
     "MixinLocalPlayer",
     "MixinMinecraft",
+    "MixinMouseHandler",
+    "MixinMultiPlayerGameMode",
     "MixinWindow"
   ],
   "injectors": {

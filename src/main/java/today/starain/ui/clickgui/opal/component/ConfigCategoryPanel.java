@@ -1,16 +1,16 @@
 package today.starain.ui.clickgui.opal.component;
 
+import net.minecraft.client.Minecraft;
 import today.starain.Starain;
 import today.starain.module.Category;
 import today.starain.ui.clickgui.opal.OpalTheme;
 import today.starain.ui.clickgui.opal.render.OpalDraw;
-import today.starain.utils.wrapper.Wrapper;
 import today.starain.utils.animation.Animation;
 import today.starain.utils.animation.Easing;
 import today.starain.utils.client.ChatUtils;
 import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.font.Icon;
-import net.minecraft.client.Minecraft;
+import today.starain.utils.wrapper.Wrapper;
 
 import java.awt.*;
 import java.io.File;

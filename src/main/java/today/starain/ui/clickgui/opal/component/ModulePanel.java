@@ -1,5 +1,7 @@
 package today.starain.ui.clickgui.opal.component;
 
+import lombok.Getter;
+import lombok.Setter;
 import today.starain.module.ClientModule;
 import today.starain.ui.clickgui.opal.OpalClickGUI;
 import today.starain.ui.clickgui.opal.OpalTheme;
@@ -9,8 +11,6 @@ import today.starain.utils.animation.Animation;
 import today.starain.utils.animation.Easing;
 import today.starain.utils.render.BindUtils;
 import today.starain.utils.render.skia.Skia;
-import lombok.Getter;
-import lombok.Setter;
 
 public final class ModulePanel extends OpalComponent {
 
@@ -18,21 +18,17 @@ public final class ModulePanel extends OpalComponent {
 
     @Getter
     private final ClientModule module;
-
-    private Animation hoverAnimation, toggleAnimation;
     @Getter
     private final Animation expandAnimation = new Animation(Easing.DECELERATE, OpalTheme.animExpand());
-
     @Getter
     private final Animation searchVisible = new Animation(Easing.DECELERATE, 220);
-
+    private final PropertyProvider propertyProvider;
+    private Animation hoverAnimation, toggleAnimation;
     @Getter
     private boolean lastModule;
     @Setter
     private int moduleIndex;
     private boolean expanded, selectingBind;
-
-    private final PropertyProvider propertyProvider;
 
     public ModulePanel(ClientModule module) {
         this.module = module;

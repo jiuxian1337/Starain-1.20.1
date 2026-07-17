@@ -29,7 +29,6 @@ public class ChatUtils implements Wrapper {
     }
 
 
-
     public static void addChatMessage(boolean prefix, String... message) {
         StringBuilder sb = new StringBuilder();
         for (String s : message) {

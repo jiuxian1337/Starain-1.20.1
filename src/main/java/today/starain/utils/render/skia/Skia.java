@@ -8,11 +8,15 @@ import io.github.humbleui.skija.Paint;
 import io.github.humbleui.types.Point;
 import io.github.humbleui.types.RRect;
 import io.github.humbleui.types.Rect;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import org.lwjgl.opengl.GL11;
 import today.starain.module.impl.client.HUD;
+import today.starain.ui.Theme;
 import today.starain.utils.render.shader.impl.KawaseBlur;
 import today.starain.utils.render.skia.context.SkiaContext;
 import today.starain.utils.render.skia.image.ImageHelper;
@@ -20,17 +24,17 @@ import today.starain.utils.wrapper.Wrapper;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.Optional;
 
 public class Skia implements Wrapper {
-
-    public static Path blurPath = new Path();
-    public static Path shadowPath = new Path();
 
     private static final ImageHelper imageHelper = new ImageHelper();
     private static final int[] COLOR_CODES = new int[]{
             0xFF000000, 0xFF0000AA, 0xFF00AA00, 0xFF00AAAA, 0xFFAA0000, 0xFFAA00AA, 0xFFAA5500, 0xFFAAAAAA,
             0xFF555555, 0xFF5555FF, 0xFF55FF55, 0xFF55FFFF, 0xFFFF5555, 0xFFFF55FF, 0xFFFFFF55, 0xFFFFFFFF
     };
+    public static Path blurPath = new Path();
+    public static Path shadowPath = new Path();
 
     public static void drawRect(float x, float y, float width, float height, Color color) {
         getCanvas().drawRect(Rect.makeXYWH(x, y, width, height), getPaint(color));
@@ -505,6 +509,56 @@ public class Skia implements Wrapper {
         drawStyledText(getCanvas(), text, bx, by, font, paint);
     }
 
+    /**
+     * 和 {@link #drawText} 一样，但字体颜色是一条从头到尾的渐变，颜色取自 HUD 的全局主题。
+     *
+     * <p>色标按字符索引从 {@link Theme#accent(int)} 上采样，所以 Theme Mode / Speed / Spread 都会自动生效：
+     * Solid 下所有色标同色，渐变退化成纯色；Gradient / Rainbow 下每个字符的相位依次递增，再由 shader
+     * 在色标之间插值出连续的过渡。渐变锚在画布绝对坐标上，因此 §颜色码切出的分段不会打断它——
+     * 但段内的 §颜色会被渐变盖掉。
+     */
+    public static void drawGradientText(String text, float x, float y, Font font) {
+        if (text == null || text.isEmpty()) return;
+        Rect bounds = font.measureText(text);
+        float bx = x - bounds.getLeft();
+        float by = y - bounds.getTop();
+
+        String visible = stripFormatting(text);
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setShader(themeGradient(bx, bx + font.measureTextWidth(visible), visible.length()));
+        drawStyledText(getCanvas(), text, bx, by, font, paint);
+    }
+
+    // 水平方向的主题渐变，一个字符一个色标。stops 至少要有两个，makeLinearGradient 不接受单色标。
+    private static Shader themeGradient(float startX, float endX, int stops) {
+        int count = Math.max(stops, 2);
+        int[] colors = new int[count];
+        float[] positions = new float[count];
+
+        for (int i = 0; i < count; i++) {
+            Color color = Theme.accent(-i);
+            colors[i] = io.github.humbleui.skija.Color.makeARGB(color.getAlpha(), color.getRed(), color.getGreen(),
+                    color.getBlue());
+            positions[i] = i / (float) (count - 1);
+        }
+
+        return Shader.makeLinearGradient(new Point(startX, 0), new Point(endX, 0), colors, positions);
+    }
+
+    private static String stripFormatting(String text) {
+        StringBuilder stripped = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '§' && i + 1 < text.length()) {
+                i++;
+            } else {
+                stripped.append(c);
+            }
+        }
+        return stripped.toString();
+    }
+
     public static void drawCenteredText(String text, float x, float y, Color color, Font font) {
         if (text == null || text.isEmpty()) return;
         Paint paint = getPaint(color);
@@ -693,5 +747,35 @@ public class Skia implements Wrapper {
         }
 
         return font.measureTextWidth(cleanText.toString());
+    }
+
+    public static String getLegacyString(Component component) {
+        StringBuilder builder = new StringBuilder();
+        component.visit((style, text) -> {
+            if (style.getColor() != null) {
+                int textColorRgb = style.getColor().getValue();
+                for (ChatFormatting format : ChatFormatting.values()) {
+                    if (format.isColor() && format.getColor() != null && format.getColor() == textColorRgb) {
+                        builder.append(format);
+                        break;
+                    }
+                }
+            }
+            if (style.isBold()) builder.append(ChatFormatting.BOLD);
+            if (style.isItalic()) builder.append(ChatFormatting.ITALIC);
+            if (style.isUnderlined()) builder.append(ChatFormatting.UNDERLINE);
+            if (style.isStrikethrough()) builder.append(ChatFormatting.STRIKETHROUGH);
+            if (style.isObfuscated()) builder.append(ChatFormatting.OBFUSCATED);
+
+            builder.append(text);
+            builder.append(ChatFormatting.RESET);
+            return Optional.empty();
+        }, Style.EMPTY);
+
+        String result = builder.toString();
+        while (result.endsWith("§r")) {
+            result = result.substring(0, result.length() - 2);
+        }
+        return result;
     }
 }

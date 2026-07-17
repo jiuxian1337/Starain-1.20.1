@@ -12,7 +12,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,10 +27,13 @@ import today.starain.event.impl.SlowdownEvent;
 @Mixin({LocalPlayer.class})
 public abstract class MixinLocalPlayer extends AbstractClientPlayer {
     @Shadow
-    private boolean wasSprinting;
-    @Shadow
     @Final
     public ClientPacketListener connection;
+    @Shadow
+    @Final
+    protected Minecraft minecraft;
+    @Shadow
+    private boolean wasSprinting;
     @Shadow
     private boolean wasShiftKeyDown;
     @Shadow
@@ -50,19 +52,16 @@ public abstract class MixinLocalPlayer extends AbstractClientPlayer {
     private boolean lastOnGround;
     @Shadow
     private boolean autoJumpEnabled;
-    @Shadow
-    @Final
-    protected Minecraft minecraft;
+
+    public MixinLocalPlayer(ClientLevel pClientLevel, GameProfile pGameProfile) {
+        super(pClientLevel, pGameProfile);
+    }
 
     @Shadow
     protected abstract boolean isControlledCamera();
 
     @Shadow
     protected abstract void sendIsSprintingIfNeeded();
-
-    public MixinLocalPlayer(ClientLevel pClientLevel, GameProfile pGameProfile) {
-        super(pClientLevel, pGameProfile);
-    }
 
     @Inject(
             method = {"tick"},
@@ -75,17 +74,20 @@ public abstract class MixinLocalPlayer extends AbstractClientPlayer {
     public void injectUpdateEvent(CallbackInfo ci) {
         PlayerTickEvent event = new PlayerTickEvent();
         Starain.getInstance().getEventManager().call(event);
-        if (event.isCancelled()) {
-            ci.cancel();
-        }
     }
 
     /**
-     * @author PolarUser
-     * @reason 傻逼Naven这么写
+     * 原版 sendPosition 整个不跑，改由这里重写一遍，好让 MotionEvent 能改写发出去的位置和视角包。
+     *
+     * <p>这里以前是 @Overwrite。@Overwrite 会把方法体合并进 LocalPlayer，sendPosition 从此归本 mixin 所有，
+     * 别的 mod 再想往里注入，mixin 会要求它的优先级严格高于合并方——同为默认的 1000 就直接抛
+     * InvalidInjectionException 崩游戏（controlify 挂在 options.autoJump().get() 上的 autoJump 补丁就是这么炸的）。
+     * 换成 HEAD + cancel 后，原版方法体原封不动留在类里（只是永远执行不到），别人的注入点照样找得到，互不打架。
      */
-    @Overwrite
-    private void sendPosition() {
+    @Inject(method = "sendPosition", at = @At("HEAD"), cancellable = true)
+    private void onSendPosition(CallbackInfo ci) {
+        ci.cancel();
+
         MotionEvent eventPre = new MotionEvent(EventType.PRE, this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot(), this.onGround());
         Starain.getInstance().getEventManager().call(eventPre);
         if (this.tickCount <= 1) {
@@ -107,7 +109,7 @@ public abstract class MixinLocalPlayer extends AbstractClientPlayer {
                 double d0 = eventPre.getY() - this.yLast1;
                 double d1 = eventPre.getZ() - this.zLast;
                 double d2 = eventPre.getYaw() - this.yRotLast;
-                double d3 = (double) (eventPre.getPitch() - this.xRotLast);
+                double d3 = eventPre.getPitch() - this.xRotLast;
                 this.positionReminder++;
                 boolean flag1 = Mth.lengthSquared(d4, d0, d1) > Mth.square(2.0E-4) || this.positionReminder >= 20;
                 boolean flag2 = d2 != 0.0 || d3 != 0.0;
@@ -139,7 +141,7 @@ public abstract class MixinLocalPlayer extends AbstractClientPlayer {
                 }
 
                 this.lastOnGround = eventPre.isOnGround();
-                this.autoJumpEnabled = (Boolean) this.minecraft.options.autoJump().get();
+                this.autoJumpEnabled = this.minecraft.options.autoJump().get();
             }
 
             Starain.getInstance().getEventManager().call(new MotionEvent(EventType.POST, eventPre.getYaw(), eventPre.getPitch()));

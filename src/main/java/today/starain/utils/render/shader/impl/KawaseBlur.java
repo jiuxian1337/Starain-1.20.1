@@ -1,8 +1,6 @@
 package today.starain.utils.render.shader.impl;
 
-import it.unimi.dsi.fastutil.ints.IntDoubleImmutablePair;
 import net.minecraft.client.Minecraft;
-import today.starain.Starain;
 import today.starain.module.impl.client.HUD;
 import today.starain.utils.render.shader.Framebuffer;
 import today.starain.utils.render.shader.PostProcessRenderer;

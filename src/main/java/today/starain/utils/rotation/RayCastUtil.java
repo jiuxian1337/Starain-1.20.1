@@ -116,7 +116,7 @@ public final class RayCastUtil implements Wrapper {
                 double d3 = eyePos.distanceTo(interceptVec);
 
                 if (d3 < currentDist || currentDist == 0.0D) {
-                    if (candidate.getRootVehicle() == entity.getRootVehicle() ) {
+                    if (candidate.getRootVehicle() == entity.getRootVehicle()) {
                         if (currentDist == 0.0D) {
                             pointedEntity = candidate;
                             hitVec = interceptVec;

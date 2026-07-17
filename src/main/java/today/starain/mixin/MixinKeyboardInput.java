@@ -27,8 +27,8 @@ public class MixinKeyboardInput extends Input {
         this.jumping = eventMoveInput.isJump();
         this.shiftKeyDown = eventMoveInput.isSneak();
         if (pIsMovingSlowly) {
-            this.leftImpulse = (float)((double)this.leftImpulse * sneakMultiplier);
-            this.forwardImpulse = (float)((double)this.forwardImpulse * sneakMultiplier);
+            this.leftImpulse = (float) ((double) this.leftImpulse * sneakMultiplier);
+            this.forwardImpulse = (float) ((double) this.forwardImpulse * sneakMultiplier);
         }
     }
 }

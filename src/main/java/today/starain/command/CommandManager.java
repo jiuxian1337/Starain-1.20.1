@@ -9,15 +9,15 @@ import lombok.Getter;
 import net.minecraft.commands.SharedSuggestionProvider;
 import org.lwjgl.glfw.GLFW;
 import today.starain.Starain;
-import today.starain.module.ClientModule;
-import today.starain.utils.client.ChatUtils;
-import today.starain.value.Value;
 import today.starain.command.impl.BindCommand;
 import today.starain.command.impl.ConfigCommand;
 import today.starain.command.impl.ToggleCommand;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.ChatEvent;
+import today.starain.module.ClientModule;
+import today.starain.utils.client.ChatUtils;
 import today.starain.utils.wrapper.Wrapper;
+import today.starain.value.Value;
 
 import java.io.File;
 import java.util.ArrayList;

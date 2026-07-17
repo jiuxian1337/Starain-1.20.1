@@ -1,5 +1,6 @@
 package today.starain.ui.clickgui.opal.component;
 
+import net.minecraft.client.Minecraft;
 import today.starain.Starain;
 import today.starain.module.Category;
 import today.starain.ui.clickgui.opal.OpalTheme;
@@ -8,7 +9,6 @@ import today.starain.utils.animation.Animation;
 import today.starain.utils.animation.Easing;
 import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.font.Fonts;
-import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.Comparator;

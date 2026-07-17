@@ -1,7 +1,6 @@
 package today.starain.value.impl;
 
 import lombok.Getter;
-import lombok.Setter;
 import today.starain.module.ClientModule;
 import today.starain.value.Value;
 

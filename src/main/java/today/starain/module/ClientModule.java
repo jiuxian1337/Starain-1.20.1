@@ -2,8 +2,6 @@ package today.starain.module;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import today.starain.Starain;
 import today.starain.module.impl.client.Notification;
 import today.starain.utils.animation.SmoothAnimationTimer;
@@ -16,14 +14,13 @@ import java.util.List;
 @Setter
 @Getter
 public class ClientModule implements Wrapper {
+    // ArrayList的动画
+    public final SmoothAnimationTimer progress = new SmoothAnimationTimer(100, 0, 0.4f);
+    private final List<Value> values = new ArrayList<>();
     private String name;
     private Category category;
     private int key;
     private boolean enabled;
-    private final List<Value> values = new ArrayList<>();
-
-    // ArrayList的动画
-    public final SmoothAnimationTimer progress = new SmoothAnimationTimer(100, 0, 0.4f);
 
     public ClientModule() {
 

@@ -1,13 +1,13 @@
 package today.starain.ui.clickgui.opal.render;
 
-import today.starain.utils.render.ColorUtil;
-import today.starain.utils.render.skia.Skia;
-import today.starain.utils.render.skia.font.Fonts;
 import io.github.humbleui.skija.Font;
 import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.Shader;
 import io.github.humbleui.types.Point;
 import io.github.humbleui.types.RRect;
+import today.starain.utils.render.ColorUtil;
+import today.starain.utils.render.skia.Skia;
+import today.starain.utils.render.skia.font.Fonts;
 
 import java.awt.*;
 
@@ -104,9 +104,9 @@ public final class OpalDraw {
 
     private static Font font(String str, float size, boolean bold) {
         if (containsNonLatin(str)) {
-            return bold ? Fonts.getSfProMedium(size) : Fonts.getSfProNormal(size);
+            return bold ? Fonts.getMedium(size) : Fonts.getNormal(size);
         }
-        return bold ? Fonts.getSfProMedium(size) : Fonts.getSfProNormal(size);
+        return bold ? Fonts.getMedium(size) : Fonts.getNormal(size);
     }
 
     private static boolean containsNonLatin(String str) {

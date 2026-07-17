@@ -9,12 +9,7 @@ import today.starain.module.ClientModule;
 import today.starain.utils.client.ChatUtils;
 import today.starain.utils.wrapper.Wrapper;
 import today.starain.value.Value;
-import today.starain.value.impl.BooleanValue;
-import today.starain.value.impl.ColorValue;
-import today.starain.value.impl.DragValue;
-import today.starain.value.impl.ModeValue;
-import today.starain.value.impl.NumberValue;
-import today.starain.value.impl.TextValue;
+import today.starain.value.impl.*;
 
 import java.io.BufferedWriter;
 import java.io.File;

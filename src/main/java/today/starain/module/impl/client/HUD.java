@@ -31,31 +31,6 @@ public class HUD extends ClientModule {
         setCategory(Category.CLIENT);
     }
 
-    @Override
-    protected void onEnable() {
-        setEnabled(false);
-    }
-
-    public String getThemeMode() {
-        return themeMode.get();
-    }
-
-    public Color getThemePrimary() {
-        return themePrimary.get();
-    }
-
-    public Color getThemeSecondary() {
-        return themeSecondary.get();
-    }
-
-    public int getThemeSpeed() {
-        return themeSpeed.get().intValue();
-    }
-
-    public int getThemeSpread() {
-        return themeSpread.get().intValue();
-    }
-
     public static boolean isBlurEnabled() {
         return Starain.getInstance().getModuleManager().getModule(HUD.class).blur.get();
     }
@@ -82,5 +57,30 @@ public class HUD extends ClientModule {
 
     public static Color getShadowColor() {
         return Starain.getInstance().getModuleManager().getModule(HUD.class).shadowColor.get();
+    }
+
+    @Override
+    protected void onEnable() {
+        setEnabled(false);
+    }
+
+    public String getThemeMode() {
+        return themeMode.get();
+    }
+
+    public Color getThemePrimary() {
+        return themePrimary.get();
+    }
+
+    public Color getThemeSecondary() {
+        return themeSecondary.get();
+    }
+
+    public int getThemeSpeed() {
+        return themeSpeed.get().intValue();
+    }
+
+    public int getThemeSpread() {
+        return themeSpread.get().intValue();
     }
 }

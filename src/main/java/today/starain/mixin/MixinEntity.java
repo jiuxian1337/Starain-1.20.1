@@ -2,15 +2,12 @@ package today.starain.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import today.starain.Starain;
 import today.starain.event.impl.RayTraceEvent;
 import today.starain.event.impl.StrafeEvent;
@@ -37,7 +34,7 @@ public abstract class MixinEntity {
     public final Vec3 getViewVector(float p_20253_) {
         float pitch = this.getViewXRot(p_20253_);
         float yaw = this.getViewYRot(p_20253_);
-        Entity thisEntity = (Entity)(Object)this;
+        Entity thisEntity = (Entity) (Object) this;
         if (thisEntity == Minecraft.getInstance().player) {
             RayTraceEvent lookEvent = new RayTraceEvent(thisEntity, yaw, pitch);
             Starain.getInstance().getEventManager().call(lookEvent);

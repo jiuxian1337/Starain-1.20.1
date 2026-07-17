@@ -1,9 +1,9 @@
 package today.starain.ui.clickgui.opal.component.property;
 
+import net.minecraft.client.Minecraft;
 import today.starain.ui.clickgui.opal.render.OpalDraw;
 import today.starain.utils.render.skia.Skia;
 import today.starain.value.impl.TextValue;
-import net.minecraft.client.Minecraft;
 
 public final class StringPanel extends PropertyPanel {
 

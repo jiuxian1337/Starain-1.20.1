@@ -5,11 +5,14 @@ import today.starain.command.CommandManager;
 import today.starain.config.ConfigManager;
 import today.starain.event.api.EventManager;
 import today.starain.module.ModuleManager;
+import today.starain.utils.rotation.RotationManager;
+import today.starain.utils.wrapper.Wrapper;
 
 @Getter
-public class Starain {
+public class Starain implements Wrapper {
     public static final String NAME = "Starain";
     public static final String VERSION = "260717";
+    public static int skipTicks = 0;
     @Getter
     private static Starain instance;
     private EventManager eventManager;
@@ -29,6 +32,8 @@ public class Starain {
 
     private void init() {
         eventManager = EventManager.netInstance();
+        eventManager.register(this);
+        eventManager.register(RotationManager.newInstance());
         moduleManager = ModuleManager.newInstance();
         commandManager = CommandManager.newInstance();
         configManager = ConfigManager.newInstance();

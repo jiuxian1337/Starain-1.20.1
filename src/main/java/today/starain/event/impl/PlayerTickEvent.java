@@ -7,6 +7,5 @@ import today.starain.event.api.Event;
 
 @Getter
 @Setter
-public class PlayerTickEvent implements Event, Cancellable {
-    private boolean cancelled;
+public class PlayerTickEvent implements Event {
 }

@@ -16,7 +16,7 @@ import java.util.function.Function;
 
 public class RotationManager implements Wrapper {
     private static final Rotation offset = new Rotation(0, 0);
-    public static Rotation rotations, lastRotations = new Rotation(0, 0), targetRotations, animationRotation, lastAnimationRotation;
+    public static Rotation rotations, lastRotations, targetRotations, animationRotation, lastAnimationRotation;
     @Setter
     @Getter
     private static boolean active, smoothed;
@@ -24,16 +24,12 @@ public class RotationManager implements Wrapper {
     private static Function<Rotation, Boolean> raycast;
     private static float randomAngle;
 
-    public static RotationManager newInstance() {
-        return new RotationManager();
-    }
-
     public static void setRotations(final Rotation rotations, final double rotationSpeed) {
         setRotations(rotations, rotationSpeed, null);
     }
 
     public static void setRotations(final Rotation rotations, final double rotationSpeed, final Function<Rotation, Boolean> raycast) {
-        RotationManager.targetRotations = rotations;
+        RotationManager.targetRotations = new Rotation(rotations.getYaw(), clampPitch(rotations.getPitch()));
         RotationManager.rotationSpeed = rotationSpeed;
         RotationManager.raycast = raycast;
         active = true;
@@ -42,56 +38,68 @@ public class RotationManager implements Wrapper {
     }
 
     public static void smooth() {
-        if (!smoothed) {
-            float targetYaw = targetRotations.getYaw();
-            float targetPitch = targetRotations.getPitch();
+        try {
+            if (!smoothed) {
+                float targetYaw = targetRotations.getYaw();
+                float targetPitch = clampPitch(targetRotations.getPitch());
 
-            if (raycast != null && (Math.abs(targetYaw - rotations.getYaw()) > 5 || Math.abs(targetPitch - rotations.getPitch()) > 5)) {
-                final Rotation trueTargetRotations = new Rotation(targetRotations.getYaw(), targetRotations.getPitch());
+                if (raycast != null && (Math.abs(targetYaw - rotations.getYaw()) > 5 || Math.abs(targetPitch - rotations.getPitch()) > 5)) {
+                    final Rotation trueTargetRotations = new Rotation(targetRotations.getYaw(), targetRotations.getPitch());
 
-                double speed = /*Math.min(*/(Math.random() * Math.random() * Math.random()) * 20/*, MoveUtil.speed() * 30)*/;
-                randomAngle += (float) ((20 + (float) (Math.random() - 0.5) * (Math.random() * Math.random() * Math.random() * 360)) * (mc.player.tickCount / 10 % 2 == 0 ? -1 : 1));
-
-                offset.setYaw((float) (offset.getYaw() + -Mth.sin((float) Math.toRadians(randomAngle)) * speed));
-                offset.setPitch((float) (offset.getPitch() + Mth.cos((float) Math.toRadians(randomAngle)) * speed));
-
-                targetYaw += offset.getYaw();
-                targetPitch += offset.getPitch();
-
-                if (!raycast.apply(new Rotation(targetYaw, targetPitch))) {
-                    randomAngle = (float) Math.toDegrees(Math.atan2(trueTargetRotations.getYaw() - targetYaw, targetPitch - trueTargetRotations.getPitch())) - 180;
-
-                    targetYaw -= offset.getYaw();
-                    targetPitch -= offset.getPitch();
+                    double speed = /*Math.min(*/(Math.random() * Math.random() * Math.random()) * 20/*, MoveUtil.speed() * 30)*/;
+                    randomAngle += (float) ((20 + (float) (Math.random() - 0.5) * (Math.random() * Math.random() * Math.random() * 360)) * (mc.player.tickCount / 10 % 2 == 0 ? -1 : 1));
 
                     offset.setYaw((float) (offset.getYaw() + -Mth.sin((float) Math.toRadians(randomAngle)) * speed));
                     offset.setPitch((float) (offset.getPitch() + Mth.cos((float) Math.toRadians(randomAngle)) * speed));
 
-                    targetYaw = targetYaw + offset.getYaw();
-                    targetPitch = targetPitch + offset.getPitch();
+                    targetYaw += offset.getYaw();
+                    targetPitch = clampPitch(targetPitch + offset.getPitch());
+
+                    if (!raycast.apply(new Rotation(targetYaw, targetPitch))) {
+                        randomAngle = (float) Math.toDegrees(Math.atan2(trueTargetRotations.getYaw() - targetYaw, targetPitch - trueTargetRotations.getPitch())) - 180;
+
+                        targetYaw -= offset.getYaw();
+                        targetPitch -= offset.getPitch();
+
+                        offset.setYaw((float) (offset.getYaw() + -Mth.sin((float) Math.toRadians(randomAngle)) * speed));
+                        offset.setPitch((float) (offset.getPitch() + Mth.cos((float) Math.toRadians(randomAngle)) * speed));
+
+                        targetYaw = targetYaw + offset.getYaw();
+                        targetPitch = clampPitch(targetPitch + offset.getPitch());
+                    }
+
+                    if (!raycast.apply(new Rotation(targetYaw, targetPitch))) {
+                        offset.setYaw(0);
+                        offset.setPitch(0);
+
+                        targetYaw = (float) (targetRotations.getYaw() + Math.random() * 2);
+                        targetPitch = clampPitch((float) (targetRotations.getPitch() + Math.random() * 2));
+                    }
                 }
 
-                if (!raycast.apply(new Rotation(targetYaw, targetPitch))) {
-                    offset.setYaw(0);
-                    offset.setPitch(0);
+                rotations = RotationUtils.smooth(new Rotation(targetYaw, targetPitch),
+                        rotationSpeed + Math.random());
 
-                    targetYaw = (float) (targetRotations.getYaw() + Math.random() * 2);
-                    targetPitch = (float) (targetRotations.getPitch() + Math.random() * 2);
-                }
             }
 
-            rotations = RotationUtils.smooth(new Rotation(targetYaw, targetPitch),
-                    rotationSpeed + Math.random());
+            smoothed = true;
+
+            mc.gameRenderer.pick(1.0F);
+        } catch (Exception e) {
 
         }
-
-        smoothed = true;
-
-        mc.gameRenderer.pick(1.0F);
     }
 
     public static Rotation getRotation() {
         return active ? rotations : new Rotation(mc.player.getYRot(), mc.player.getXRot());
+    }
+
+    private static float clampPitch(float pitch) {
+        return Mth.clamp(pitch, -90.0f, 90.0f);
+    }
+
+    public static RotationManager newInstance() {
+        return new RotationManager();
     }
 
     @EventTarget
@@ -115,7 +123,6 @@ public class RotationManager implements Wrapper {
         }
     }
 
-    @EventPriority(Priority.HIGH)
     @EventTarget
     public void onAnimation(RotationAnimationEvent e) {
         if (active && animationRotation != null && lastAnimationRotation != null) {
@@ -133,7 +140,7 @@ public class RotationManager implements Wrapper {
             if (active && rotations != null) {
 
                 float yaw = rotations.getYaw();
-                float pitch = rotations.getPitch();
+                float pitch = clampPitch(rotations.getPitch());
                 if (!Float.isNaN(yaw) && !Float.isNaN(pitch) && active) {
                     e.setYaw(yaw);
                     e.setPitch(pitch);
@@ -153,6 +160,7 @@ public class RotationManager implements Wrapper {
             lastAnimationRotation = animationRotation;
             animationRotation = new Rotation(e.getYaw(), e.getPitch());
             targetRotations = new Rotation(mc.player.getYRot(), mc.player.getXRot());
+            raycast = null;
             smoothed = false;
         }
     }
@@ -201,7 +209,8 @@ public class RotationManager implements Wrapper {
     public void onPositionItem(PositionItemEvent e) {
         if (active && rotations != null) {
             PosRot packet = (PosRot) e.getPacket();
-            PosRot newPacket = new PosRot(packet.getX(0.0), packet.getY(0.0), packet.getZ(0.0), rotations.getYaw(), rotations.getYaw(), packet.isOnGround());
+            float pitch = clampPitch(rotations.getPitch());
+            PosRot newPacket = new PosRot(packet.getX(0.0), packet.getY(0.0), packet.getZ(0.0), rotations.getYaw(), pitch, packet.isOnGround());
             e.setPacket(newPacket);
         }
     }

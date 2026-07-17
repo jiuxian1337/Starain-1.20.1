@@ -78,7 +78,7 @@ public class MixinMinecraft {
     )
     private void runTick(CallbackInfo ci) {
         long currentTime = System.nanoTime() / 1000000L;
-        int deltaTime = (int)(currentTime - this.lastFrame);
+        int deltaTime = (int) (currentTime - this.lastFrame);
         this.lastFrame = currentTime;
         AnimationUtils.delta = deltaTime;
     }

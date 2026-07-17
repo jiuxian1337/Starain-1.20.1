@@ -1,17 +1,13 @@
 package today.starain.utils.render;
 
 
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import today.starain.utils.vector.Vector2f;
-
-import java.lang.reflect.Method;
 
 public class ProjectionUtils {
     private static final Minecraft mc = Minecraft.getInstance();

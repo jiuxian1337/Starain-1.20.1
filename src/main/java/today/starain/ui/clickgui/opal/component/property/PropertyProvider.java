@@ -1,5 +1,6 @@
 package today.starain.ui.clickgui.opal.component.property;
 
+import lombok.Getter;
 import today.starain.module.ClientModule;
 import today.starain.ui.clickgui.opal.OpalTheme;
 import today.starain.ui.clickgui.opal.component.OpalComponent;
@@ -7,7 +8,6 @@ import today.starain.ui.clickgui.opal.render.OpalDraw;
 import today.starain.utils.render.skia.Skia;
 import today.starain.value.Value;
 import today.starain.value.impl.*;
-import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;

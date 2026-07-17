@@ -4,7 +4,7 @@ import today.starain.Starain;
 import today.starain.module.impl.client.HUD;
 import today.starain.utils.render.ColorUtil;
 
-import java.awt.Color;
+import java.awt.*;
 
 public final class Theme {
 

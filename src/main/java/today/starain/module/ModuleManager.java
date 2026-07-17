@@ -6,7 +6,14 @@ import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.KeyboardEvent;
 import today.starain.event.impl.MouseButtonEvent;
 import today.starain.module.impl.client.*;
+import today.starain.module.impl.combat.KillAura;
+import today.starain.module.impl.combat.Velocity;
+import today.starain.module.impl.misc.AntiBot;
+import today.starain.module.impl.misc.Target;
+import today.starain.module.impl.misc.Teams;
+import today.starain.module.impl.movement.NoJumpDelay;
 import today.starain.module.impl.movement.Sprint;
+import today.starain.module.impl.player.Scaffold;
 import today.starain.module.impl.render.FullBright;
 import today.starain.utils.render.BindUtils;
 import today.starain.utils.wrapper.Wrapper;
@@ -26,6 +33,14 @@ public class ModuleManager implements Wrapper {
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
         modules.add(new ScoreboardModule());
+//        modules.add(new Criticals());
+        modules.add(new KillAura());
+        modules.add(new Velocity());
+        modules.add(new AntiBot());
+        modules.add(new Target());
+        modules.add(new Teams());
+        modules.add(new Scaffold());
+        modules.add(new NoJumpDelay());
         Starain.getInstance().getEventManager().register(this);
     }
 
@@ -68,18 +83,18 @@ public class ModuleManager implements Wrapper {
 
     @EventTarget
     public void onKeyboard(KeyboardEvent event) {
-        if (event.getAction() != GLFW.GLFW_PRESS || event.getScreen() != null) {
+        if (event.action() != GLFW.GLFW_PRESS || event.screen() != null) {
             return;
         }
-        toggleByBind(BindUtils.keyboardCode(event.getKey()));
+        toggleByBind(BindUtils.keyboardCode(event.key()));
     }
 
     @EventTarget
     public void onMouse(MouseButtonEvent event) {
-        if (event.getAction() != GLFW.GLFW_PRESS || event.getScreen() != null) {
+        if (event.action() != GLFW.GLFW_PRESS || event.screen() != null) {
             return;
         }
-        toggleByBind(BindUtils.mouseCode(event.getButton()));
+        toggleByBind(BindUtils.mouseCode(event.button()));
     }
 
     // key 为 0 表示未绑定，绝不能被任何按键匹配上。

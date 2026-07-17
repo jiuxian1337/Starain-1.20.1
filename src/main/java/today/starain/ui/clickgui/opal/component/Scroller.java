@@ -1,8 +1,8 @@
 package today.starain.ui.clickgui.opal.component;
 
+import lombok.Getter;
 import today.starain.utils.animation.Animation;
 import today.starain.utils.animation.Easing;
-import lombok.Getter;
 
 public final class Scroller {
 

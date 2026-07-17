@@ -2,11 +2,7 @@ package today.starain.command;
 
 import today.starain.module.ClientModule;
 import today.starain.value.Value;
-import today.starain.value.impl.BooleanValue;
-import today.starain.value.impl.ColorValue;
-import today.starain.value.impl.ModeValue;
-import today.starain.value.impl.NumberValue;
-import today.starain.value.impl.TextValue;
+import today.starain.value.impl.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +28,9 @@ public final class ValueEditor {
         return builder.toString();
     }
 
-    /** 补全用的紧凑名："Glow Radius" -> "GlowRadius" */
+    /**
+     * 补全用的紧凑名："Glow Radius" -> "GlowRadius"
+     */
     public static String compactName(Value value) {
         return value.getName().replace(" ", "");
     }
