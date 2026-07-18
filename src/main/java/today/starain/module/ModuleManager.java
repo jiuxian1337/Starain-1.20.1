@@ -19,6 +19,7 @@ import today.starain.module.impl.movement.FastWeb;
 import today.starain.module.impl.movement.Sprint;
 import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.FullBright;
+import today.starain.module.impl.render.NameTags;
 import today.starain.module.impl.render.TimeChanger;
 import today.starain.utils.render.BindUtils;
 import today.starain.utils.wrapper.Wrapper;
@@ -35,6 +36,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new Sprint());
         modules.add(new FullBright());
         modules.add(new TimeChanger());
+        modules.add(new NameTags());
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
