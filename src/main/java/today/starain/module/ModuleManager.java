@@ -10,6 +10,7 @@ import today.starain.module.impl.combat.Criticals;
 import today.starain.module.impl.combat.KillAura;
 import today.starain.module.impl.combat.Velocity;
 import today.starain.module.impl.misc.AntiBot;
+import today.starain.module.impl.misc.GhostHand;
 import today.starain.module.impl.misc.HealthBypass;
 import today.starain.module.impl.misc.Target;
 import today.starain.module.impl.misc.Teams;
@@ -18,6 +19,7 @@ import today.starain.module.impl.movement.FastWeb;
 import today.starain.module.impl.movement.Sprint;
 import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.FullBright;
+import today.starain.module.impl.render.TimeChanger;
 import today.starain.utils.render.BindUtils;
 import today.starain.utils.wrapper.Wrapper;
 
@@ -32,6 +34,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new HUD());
         modules.add(new Sprint());
         modules.add(new FullBright());
+        modules.add(new TimeChanger());
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
@@ -51,6 +54,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new TargetHUD());
         modules.add(new NoFall());
         modules.add(new HealthBypass());
+        modules.add(new GhostHand());
         Starain.getInstance().getEventManager().register(this);
     }
 
