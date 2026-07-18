@@ -63,8 +63,9 @@ public class SkiaContext {
         GL33.glBindSampler(0, 0);
         RenderSystem.disableBlend();
         GL11.glDisable(GL11.GL_BLEND);
-        RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        // 还原为默认 alpha 混合（原来留成 SRC_ALPHA/ONE 加法混合会让后续世界渲染偏亮）
+        RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         RenderSystem.blendEquation(GL33.GL_FUNC_ADD);
         GL33.glBlendEquation(GL33.GL_FUNC_ADD);
         RenderSystem.colorMask(true, true, true, true);
@@ -79,6 +80,9 @@ public class SkiaContext {
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         RenderSystem.activeTexture(GL13.GL_TEXTURE0);
         RenderSystem.disableCull();
+        // 还原着色器颜色为白色：Skia 不碰这个 uniform，但打开 Screen 时 MC 可能留成非白，
+        // 而 ClickGui 全走 Skia、不会像 HUD 路径那样被 MC 每帧重置，导致下一帧世界渲染偏色。
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
 }

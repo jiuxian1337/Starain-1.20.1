@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class ScoreboardModule extends ClientModule {
 
     private static Objective objective;
-    private final NumberValue x = new NumberValue("X", 0, 1000, 10, 1, this);
+    private final NumberValue x = new NumberValue("X", 0, 5000, 10, 1, this);
     private final NumberValue y = new NumberValue("y", 0, 1000, 150, 1, this);
     private final BooleanValue renderScore = new BooleanValue("Render Score", false, this);
     private final BooleanValue replaceIP = new BooleanValue("Replace Server IP", true, this);

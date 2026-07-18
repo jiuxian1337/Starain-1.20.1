@@ -11,9 +11,15 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import today.starain.Starain;
 import today.starain.event.impl.RayTraceEvent;
 import today.starain.event.impl.StrafeEvent;
+import today.starain.event.impl.StuckInBlockEvent;
+import net.minecraft.world.level.block.state.BlockState;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin({Entity.class})
 public abstract class MixinEntity {
+    @Shadow
+    private Vec3 stuckSpeedMultiplier;
 //    @Shadow
 //    protected Vec3 stuckSpeedMultiplier;
 
@@ -43,6 +49,20 @@ public abstract class MixinEntity {
         }
 
         return this.calculateViewVector(pitch, yaw);
+    }
+
+    @Inject(method = {"makeStuckInBlock"}, at = {@At("RETURN")})
+    private void starainMakeStuckInBlock(BlockState pState, Vec3 pMotionMultiplier, CallbackInfo ci) {
+        Entity thisEntity = (Entity) (Object) this;
+        if (Minecraft.getInstance().player == thisEntity) {
+            StuckInBlockEvent event = new StuckInBlockEvent(pState, pMotionMultiplier);
+            Starain.getInstance().getEventManager().call(event);
+            if (event.isCancelled()) {
+                this.stuckSpeedMultiplier = Vec3.ZERO;
+                return;
+            }
+            this.stuckSpeedMultiplier = event.getStuckSpeedMultiplier();
+        }
     }
 
     @ModifyArg(
