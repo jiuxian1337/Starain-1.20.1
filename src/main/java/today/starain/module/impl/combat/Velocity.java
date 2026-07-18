@@ -128,6 +128,8 @@ public class Velocity extends ClientModule {
 
         if (jump && mc.player.onGround()) {
             event.setJump(true);
+            event.setForward(1.0f);
+            event.setStrafe(0.0f);
             jump = false;
         }
     }
