@@ -100,6 +100,10 @@ public class KillAura extends ClientModule {
             }
         }
 
+        if (targetNumber >= targets.size()) {
+            targetNumber = 0;
+        }
+
         if (targets == null || targets.isEmpty()) return;
 
         Entity target = targets.get(targetNumber);
