@@ -120,6 +120,7 @@ public class Scaffold extends ClientModule {
     private final BooleanValue esp = new BooleanValue("ESP", true, this);
     private final BooleanValue espSync = new BooleanValue("ESP Sync Color", false, this, esp::get);
     private final ColorValue espColor = new ColorValue("ESP Color", new Color(150, 0, 0, 180), this, () -> esp.get() && !espSync.get());
+    private final NumberValue indexMultiplier = new NumberValue("ESP Sync Color Index Multiplier", 0.0, 5.0, 2.0, 0.01, this, () -> esp.get() && espSync.get());
     private final BooleanValue espFill = new BooleanValue("ESP Fill", true, this, esp::get);
     private final BooleanValue espOutline = new BooleanValue("ESP Outline", true, this, esp::get);
     private final NumberValue espCount = new NumberValue("ESP Count", 1, 10, 5, 1, this, esp::get);
@@ -650,7 +651,7 @@ public class Scaffold extends ClientModule {
             // 寿命比例：刚放置=1(深)、越旧越低(浅)；停止放置后整体下降 -> 回收淡出。
             float lifeFrac = Math.max(0.0F, Math.min(1.0F, e.life / (float) ESP_LIFE));
             // Sync 开：颜色按主题逐块渐变；关：单一自定义色。
-            Color c = espSync.get() ? Theme.accent(i) : base;
+            Color c = espSync.get() ? Theme.accent((int) (-i * indexMultiplier.get().floatValue())) : base;
             float r = c.getRed() / 255.0F;
             float g = c.getGreen() / 255.0F;
             float b = c.getBlue() / 255.0F;
