@@ -45,6 +45,8 @@ public class NoFall extends ClientModule {
 
         if (grimQueuedJump) {
             event.setJump(true);
+            event.setForward(0);
+            event.setStrafe(0);
             grimQueuedJump = false;
         }
     }
