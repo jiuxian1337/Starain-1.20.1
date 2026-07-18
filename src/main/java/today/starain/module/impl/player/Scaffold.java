@@ -1,10 +1,17 @@
 package today.starain.module.impl.player;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import io.github.humbleui.skija.Font;
 import io.github.humbleui.skija.Paint;
 import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
@@ -23,13 +30,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import today.starain.Starain;
+import today.starain.event.api.EventType;
 import today.starain.event.api.Priority;
 import today.starain.event.api.annotations.EventPriority;
 import today.starain.event.api.annotations.EventTarget;
+import today.starain.event.impl.GameTickEvent;
 import today.starain.event.impl.MoveInputEvent;
 import today.starain.event.impl.PlayerTickEvent;
+import today.starain.event.impl.RenderWorldEvent;
 import today.starain.event.impl.RotationAnimationEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
@@ -43,10 +54,13 @@ import today.starain.utils.rotation.RayCastUtil;
 import today.starain.utils.rotation.Rotation;
 import today.starain.utils.rotation.RotationManager;
 import today.starain.utils.rotation.RotationUtils;
+import today.starain.ui.Theme;
 import today.starain.value.impl.BooleanValue;
+import today.starain.value.impl.ColorValue;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,6 +117,14 @@ public class Scaffold extends ClientModule {
             Blocks.FLOWER_POT
     );
     private final BooleanValue telly = new BooleanValue("Telly", false, this);
+    private final BooleanValue esp = new BooleanValue("ESP", true, this);
+    private final BooleanValue espSync = new BooleanValue("ESP Sync Color", false, this, esp::get);
+    private final ColorValue espColor = new ColorValue("ESP Color", new Color(150, 0, 0, 180), this, () -> esp.get() && !espSync.get());
+    private final BooleanValue espFill = new BooleanValue("ESP Fill", true, this, esp::get);
+    private final BooleanValue espOutline = new BooleanValue("ESP Outline", true, this, esp::get);
+    private final NumberValue espCount = new NumberValue("ESP Count", 1, 10, 5, 1, this, esp::get);
+    private static final int ESP_LIFE = 14;
+    private final List<EspBox> espTrail = new ArrayList<>();
     private final BooleanValue snap = new BooleanValue("Snap", false, this, () -> !telly.get());
     private final NumberValue snapDist = new NumberValue("Snap Dist", 0, 1, 0.1, 0.01, this, snap::get);
     private final BooleanValue degrees45 = new BooleanValue("45 Degrees", false, this);
@@ -192,6 +214,7 @@ public class Scaffold extends ClientModule {
         }
 
         getBlockInfo();
+        recordEspTrail();
 //
         boolean reachable = true;
         if (mc.player.getDeltaMovement().y < -0.1 && blockPos != null) {
@@ -276,6 +299,7 @@ public class Scaffold extends ClientModule {
 
         int blockCount = getBlockCount();
         rotateCount = 0;
+        espTrail.clear();
     }
 
     @Override
@@ -291,6 +315,7 @@ public class Scaffold extends ClientModule {
             mc.player.getInventory().selected = oldSlot;
         }
         yLevel = 0;
+        espTrail.clear();
     }
 
     private void handleTelly() {
@@ -376,6 +401,48 @@ public class Scaffold extends ClientModule {
         }
 
         return Mth.floor(mc.player.getY()) - 1;
+    }
+
+    private static final class EspBox {
+        final BlockPos pos;
+        int life;
+
+        EspBox(BlockPos pos, int life) {
+            this.pos = pos;
+            this.life = life;
+        }
+    }
+
+    @EventTarget
+    public void onEspAge(GameTickEvent event) {
+        if (event.getType() != EventType.PRE) {
+            return;
+        }
+        // 每游戏 tick 老化一次：寿命 -1，耗尽移除。停止放置后不再刷新 -> 轨迹由远及近淡出回收。
+        espTrail.removeIf(box -> --box.life <= 0);
+    }
+
+    private void recordEspTrail() {
+        // 记录“实际放置的那一格”= blockPos 被点击面外侧 = blockPos.relative(enumFacing)，
+        // 而不是被点击的支撑块本身，避免高亮相对放置块前后错位。
+        if (blockPos == null || enumFacing == null) {
+            return;
+        }
+        BlockPos placed = blockPos.relative(enumFacing).immutable();
+        int idx = -1;
+        for (int i = 0; i < espTrail.size(); i++) {
+            if (espTrail.get(i).pos.equals(placed)) {
+                idx = i;
+                break;
+            }
+        }
+        EspBox box = (idx >= 0) ? espTrail.remove(idx) : new EspBox(placed, ESP_LIFE);
+        box.life = ESP_LIFE;
+        espTrail.add(0, box);
+        int max = Math.max(1, espCount.get().intValue());
+        while (espTrail.size() > max) {
+            espTrail.remove(espTrail.size() - 1);
+        }
     }
 
     private void getBlockInfo() {
@@ -543,6 +610,133 @@ public class Scaffold extends ClientModule {
         double closestZ = Math.min(distToMinZ, distToMaxZ);
 
         return Math.min(closestX, closestZ) <= sensitivity;
+    }
+
+    @EventTarget
+    public void onScaffoldEsp(RenderWorldEvent event) {
+        if (!esp.get() || mc.player == null || mc.level == null) {
+            return;
+        }
+        if (!espFill.get() && !espOutline.get()) {
+            return;
+        }
+        List<EspBox> blocks = new ArrayList<>(espTrail);
+        int max = Math.max(1, espCount.get().intValue());
+        if (blocks.size() > max) {
+            blocks = blocks.subList(0, max);
+        }
+        if (blocks.isEmpty()) {
+            if (blockPos == null || enumFacing == null) return;
+            blocks.add(new EspBox(blockPos.relative(enumFacing).immutable(), ESP_LIFE));
+        }
+
+        Color base = espColor.get();
+
+        PoseStack stack = event.getPoseStack();
+        stack.pushPose();
+        Vec3 cam = mc.getEntityRenderDispatcher().camera.getPosition();
+        stack.translate(-cam.x, -cam.y, -cam.z);
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
+        RenderSystem.lineWidth(1.5F);
+
+        int count = blocks.size();
+        for (int i = 0; i < count; i++) {
+            EspBox e = blocks.get(i);
+            // 寿命比例：刚放置=1(深)、越旧越低(浅)；停止放置后整体下降 -> 回收淡出。
+            float lifeFrac = Math.max(0.0F, Math.min(1.0F, e.life / (float) ESP_LIFE));
+            // Sync 开：颜色按主题逐块渐变；关：单一自定义色。
+            Color c = espSync.get() ? Theme.accent(i) : base;
+            float r = c.getRed() / 255.0F;
+            float g = c.getGreen() / 255.0F;
+            float b = c.getBlue() / 255.0F;
+            float baseA = espSync.get() ? 0.7F : c.getAlpha() / 255.0F;
+            float a = baseA * lifeFrac;
+            AABB box = new AABB(e.pos);
+            if (espFill.get()) {
+                RenderSystem.setShaderColor(r, g, b, a);
+                drawSolidBox(box, stack);
+            }
+            if (espOutline.get()) {
+                // 描边也随寿命淡化（比填充稍亮一点便于看清边）。
+                RenderSystem.setShaderColor(r, g, b, Math.min(1.0F, a * 1.6F));
+                drawOutlinedBox(box, stack);
+            }
+        }
+
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableBlend();
+        stack.popPose();
+    }
+
+    private static void drawSolidBox(AABB bb, PoseStack matrixStack) {
+        Tesselator tessellator = RenderSystem.renderThreadTesselator();
+        BufferBuilder bufferBuilder = tessellator.getBuilder();
+        Matrix4f matrix = matrixStack.last().pose();
+        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        BufferUploader.drawWithShader(bufferBuilder.end());
+    }
+
+    private static void drawOutlinedBox(AABB bb, PoseStack matrixStack) {
+        Matrix4f matrix = matrixStack.last().pose();
+        BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+        RenderSystem.setShader(GameRenderer::getPositionShader);
+        bufferBuilder.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION);
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.minY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.maxX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.maxZ).endVertex();
+        bufferBuilder.vertex(matrix, (float) bb.minX, (float) bb.maxY, (float) bb.minZ).endVertex();
+        BufferUploader.drawWithShader(bufferBuilder.end());
     }
 
     @Override
