@@ -294,7 +294,7 @@ public class Scaffold extends ClientModule {
     }
 
     private void handleTelly() {
-        if (mc.player.onGround() && (strafeInput != 0 || forwardInput != 0)) {
+        if (mc.player.onGround()) {
             RotationManager.setRotations(new Rotation(rawInputYaw, rotation == null ? mc.player.getXRot() : rotation.getPitch()), rotateBackSpeed.get().floatValue());
             return;
         }

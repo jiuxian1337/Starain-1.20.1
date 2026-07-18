@@ -1,4 +1,3 @@
-/*
 package today.starain.module.impl.combat;
 
 import today.starain.event.api.EventType;
@@ -7,6 +6,7 @@ import today.starain.event.api.annotations.EventPriority;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.GameTickEvent;
 import today.starain.event.impl.MotionEvent;
+import today.starain.event.impl.MoveInputEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
 
@@ -23,24 +23,21 @@ public class Criticals extends ClientModule {
     @EventTarget
     public void onGameTick(GameTickEvent event) {
         if (mc.player == null || event.getType() != EventType.PRE) return;
-        if (mc.player.fallDistance <= 0 || mc.player.onGround()) {
+        if (mc.player.fallDistance <= 0 || mc.player.fallDistance > 1) {
             fallTicks = 0;
         } else {
             fallTicks++;
             if (KillAura.targets != null && !KillAura.targets.isEmpty() && Velocity.attackQueue == 0) {
-                mc.options.keySprint.setDown(false);
-                mc.player.setSprinting(false);
                 stopSprint = true;
             }
         }
     }
 
     @EventTarget
-    public void onMotion(MotionEvent event) {
-        if (event.getType() != EventType.PRE || !stopSprint) return;
+    public void onMoveInput(MoveInputEvent event) {
+        if (!stopSprint) return;
+        event.setForward(0);
         stopSprint = false;
-        mc.player.setSprinting(false);
-        mc.options.keySprint.setDown(false);
     }
 
     @Override
@@ -49,4 +46,3 @@ public class Criticals extends ClientModule {
         stopSprint = false;
     }
 }
-*/

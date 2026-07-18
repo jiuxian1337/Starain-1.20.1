@@ -111,7 +111,7 @@ public class KillAura extends ClientModule {
             long time = System.currentTimeMillis();
             long delay = (long) (1000.0 / (Math.max(0.01, ThreadLocalRandom.current().nextGaussian(cps.get().floatValue(), 5))));
             if (time - lastAttackTime >= delay) {
-                if (player.hurtTime <= 1 || (mc.player.hurtTime >= 6 && !Starain.getInstance().getModuleManager().getModule(Velocity.class).isEnabled())) {
+                if (player.hurtTime <= 1 || Criticals.fallTicks == 2 || (mc.player.hurtTime >= 6 && !Starain.getInstance().getModuleManager().getModule(Velocity.class).isEnabled())) {
                     attacks++;
                     lastAttackTime = time;
                 }
