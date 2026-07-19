@@ -94,30 +94,56 @@ public final class InjectedJoinScreen {
 
         Minecraft mc = Minecraft.getInstance();
         String addr = "127.0.0.1:" + ProxyInjector.PROXY_PORT;
-        int attempts = 3;
-        long perAttemptMs = 8000L;
-        for (int i = 0; i < attempts; i++) {
-            Screen parent = sParentScreen != null ? sParentScreen : mc.screen;
-            mc.execute(() -> {
-                try {
-                    ServerData sd = new ServerData("Starain Proxy", addr, false);
-                    ConnectScreen.startConnecting(parent, mc,
-                            ServerAddress.parseString(addr), sd, false);
-                } catch (Throwable t) {
-                    ProxyInjector.markFailed("connect: " + t.getMessage());
-                }
-            });
+        Screen parent = sParentScreen != null ? sParentScreen : mc.screen;
 
-            long deadline = System.currentTimeMillis() + perAttemptMs;
-            boolean progressed = false;
-            while (System.currentTimeMillis() < deadline) {
-                if (mc.level != null && mc.player != null) { progressed = true; break; }
-                if (!(mc.screen instanceof ConnectScreen)) { progressed = true; break; }
-                sleep(200);
-            }
-            if (progressed) break;
-            if (i < attempts - 1) sleep(400);
-        }
+        mc.execute(() -> {
+            try {
+                ServerData sd = new ServerData("Starain Proxy", addr, false);
+                ConnectScreen.startConnecting(parent, mc,
+                        ServerAddress.parseString(addr), sd, false);
+            } catch (Throwable t) { ProxyInjector.markFailed("connect: " + t.getMessage()); }
+        });
+
+        long appearDeadline = System.currentTimeMillis() + 3000;
+        while (System.currentTimeMillis() < appearDeadline
+               && !(mc.screen instanceof ConnectScreen)) sleep(80);
+
+        sleep(1500);
+
+        mc.execute(() -> {
+            try {
+                if (mc.screen instanceof ConnectScreen cs) {
+                    for (java.lang.reflect.Field f : ConnectScreen.class.getDeclaredFields()) {
+                        if (f.getType() == net.minecraft.network.Connection.class) {
+                            f.setAccessible(true);
+                            net.minecraft.network.Connection conn =
+                                    (net.minecraft.network.Connection) f.get(cs);
+                            if (conn != null) {
+                                for (java.lang.reflect.Field cf : net.minecraft.network.Connection.class.getDeclaredFields()) {
+                                    if (cf.getType() == io.netty.channel.Channel.class) {
+                                        cf.setAccessible(true);
+                                        io.netty.channel.Channel ch = (io.netty.channel.Channel) cf.get(conn);
+                                        if (ch != null && ch.isOpen()) ch.close();
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        });
+
+        sleep(700);
+
+        mc.execute(() -> {
+            try {
+                ServerData sd = new ServerData("Starain Proxy", addr, false);
+                ConnectScreen.startConnecting(parent, mc,
+                        ServerAddress.parseString(addr), sd, false);
+            } catch (Throwable t) { ProxyInjector.markFailed("reconnect: " + t.getMessage()); }
+        });
 
         sleep(500);
         stopLogTail();
