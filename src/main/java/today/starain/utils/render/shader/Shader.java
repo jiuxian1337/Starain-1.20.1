@@ -102,6 +102,10 @@ public class Shader {
         ShaderHelper.uniformFloat4(getLocation(name), (float) v1, (float) v2, (float) v3, (float) v4);
     }
 
+    public void set(String name, float[] v) {
+        ShaderHelper.uniformFloat3Array(getLocation(name), v);
+    }
+
     public void set(String name, Matrix4f mat) {
         mat.get(MAT);
         GlStateManager._glUniformMatrix4(getLocation(name), false, MAT);

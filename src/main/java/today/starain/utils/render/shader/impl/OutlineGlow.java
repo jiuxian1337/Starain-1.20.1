@@ -21,13 +21,13 @@ import today.starain.utils.render.shader.PostProcessRenderer;
 import today.starain.utils.render.shader.Shader;
 import today.starain.utils.render.shader.ShaderHelper;
 
-import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11C.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11C.GL_ONE;
+import static org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11C.GL_SRC_ALPHA;
 
 public class OutlineGlow {
@@ -68,8 +68,8 @@ public class OutlineGlow {
     private int height;
 
     public void draw(PoseStack poseStack, float partialTick, List<Player> targets,
-                     Color colorA, Color colorB, float radius, float strength, boolean antiAliasing,
-                     boolean renderHand) {
+                     float[] colors, int stops, float alpha, float radius, float strength, boolean antiAliasing,
+                     boolean renderHand, boolean additive) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || (targets.isEmpty() && !renderHand)) {
             return;
@@ -116,6 +116,10 @@ public class OutlineGlow {
             }
         }
 
+        fbo.bind();
+        maskBuffer.endBatch();
+        dispatcher.setRenderShadow(true);
+
         if (renderHand && mc.player != null) {
             Matrix4f oldProjection = RenderSystem.getProjectionMatrix();
             VertexSorting oldSorting = RenderSystem.getVertexSorting();
@@ -134,12 +138,11 @@ public class OutlineGlow {
             }
             poseStack.popPose();
 
+            fbo.bind();
+            maskBuffer.endBatch();
+
             RenderSystem.setProjectionMatrix(oldProjection, oldSorting);
         }
-
-        fbo.bind();
-        maskBuffer.endBatch();
-        dispatcher.setRenderShadow(true);
 
         mc.getMainRenderTarget().bindWrite(true);
 
@@ -147,15 +150,14 @@ public class OutlineGlow {
         ShaderHelper.bindTexture(fbo.texture);
         shader.set("uMask", 0);
         shader.set("uTexelSize", 1.0 / fbo.width, 1.0 / fbo.height);
-        shader.set("uColorA", colorA.getRed() / 255.0, colorA.getGreen() / 255.0,
-                colorA.getBlue() / 255.0, colorA.getAlpha() / 255.0);
-        shader.set("uColorB", colorB.getRed() / 255.0, colorB.getGreen() / 255.0,
-                colorB.getBlue() / 255.0, colorB.getAlpha() / 255.0);
+        shader.set("uColors", colors);
+        shader.set("uCount", stops);
+        shader.set("uAlpha", alpha);
         shader.set("uRadius", radius * fbo.sizeMulti);
         shader.set("uStrength", strength);
 
         RenderSystem.enableBlend();
-        GlStateManager._blendFunc(GL_SRC_ALPHA, GL_ONE);
+        GlStateManager._blendFunc(GL_SRC_ALPHA, additive ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
 

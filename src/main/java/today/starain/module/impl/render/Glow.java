@@ -9,6 +9,7 @@ import today.starain.ui.Theme;
 import today.starain.utils.render.shader.impl.OutlineGlow;
 import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ColorValue;
+import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
 import java.awt.Color;
@@ -17,11 +18,14 @@ import java.util.List;
 
 public class Glow extends ClientModule {
 
+    private static final int MAX_STOPS = 32;
+
     private final BooleanValue syncColor = new BooleanValue("Sync Color", true, this);
     private final ColorValue color = new ColorValue("Color", new Color(0, 186, 255), this, () -> !syncColor.get());
     private final NumberValue radius = new NumberValue("Radius", 1.0, 32.0, 7.0, 1.0, this);
     private final NumberValue strength = new NumberValue("Strength", 0.1, 3.0, 1.0, 0.1, this);
     private final NumberValue spread = new NumberValue("Color Spread", 0.0, 32.0, 7.0, 1.0, this, syncColor::get);
+    private final ModeValue blend = new ModeValue("Blend", "Normal", new String[]{"Normal", "Additive"}, this);
     private final BooleanValue antiAliasing = new BooleanValue("Anti-Aliasing", true, this);
     private final BooleanValue self = new BooleanValue("Self", false, this);
 
@@ -44,18 +48,26 @@ public class Glow extends ClientModule {
         boolean handGlow = self.get() && firstPerson;
         if (targets.isEmpty() && !handGlow) return;
 
-        Color colorA;
-        Color colorB;
+        int stops;
+        float alpha;
         if (syncColor.get()) {
-            colorA = Theme.accent(0);
-            colorB = Theme.accent(-spread.get().intValue());
+            stops = Math.max(2, Math.min(MAX_STOPS, spread.get().intValue() + 1));
+            alpha = 1.0F;
         } else {
-            colorA = color.get();
-            colorB = color.get();
+            stops = 2;
+            alpha = color.get().getAlpha() / 255.0F;
+        }
+
+        float[] colors = new float[stops * 3];
+        for (int i = 0; i < stops; i++) {
+            Color stop = syncColor.get() ? Theme.accent(-i) : color.get();
+            colors[i * 3] = stop.getRed() / 255.0F;
+            colors[i * 3 + 1] = stop.getGreen() / 255.0F;
+            colors[i * 3 + 2] = stop.getBlue() / 255.0F;
         }
 
         OutlineGlow.INSTANCE.draw(event.getPoseStack(), event.getPartialTick(), targets,
-                colorA, colorB, radius.get().floatValue(), strength.get().floatValue(), antiAliasing.get(),
-                handGlow);
+                colors, stops, alpha, radius.get().floatValue(), strength.get().floatValue(),
+                antiAliasing.get(), handGlow, blend.isMode("Additive"));
     }
 }
