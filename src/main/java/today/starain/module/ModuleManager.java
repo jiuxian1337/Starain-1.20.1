@@ -14,8 +14,9 @@ import today.starain.module.impl.misc.GhostHand;
 import today.starain.module.impl.misc.HealthBypass;
 import today.starain.module.impl.misc.Target;
 import today.starain.module.impl.misc.Teams;
-import today.starain.module.impl.movement.NoJumpDelay;
 import today.starain.module.impl.movement.FastWeb;
+import today.starain.module.impl.movement.NoJumpDelay;
+import today.starain.module.impl.movement.NoSlow;
 import today.starain.module.impl.movement.Sprint;
 import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.FullBright;
@@ -49,6 +50,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new Teams());
         modules.add(new Scaffold());
         modules.add(new NoJumpDelay());
+        modules.add(new NoSlow());
         modules.add(new FastWeb());
         modules.add(new AutoTools());
         modules.add(new ChestStealer());
