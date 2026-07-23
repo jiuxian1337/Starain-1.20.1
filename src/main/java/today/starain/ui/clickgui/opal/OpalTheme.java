@@ -78,16 +78,25 @@ public final class OpalTheme {
         return ClickGuiModule.guiAnimations() ? (long) ((100 + index * 80L) / ClickGuiModule.guiAnimSpeed()) : 0L;
     }
 
-    // ---- Accent (global theme) ----
+    // ---- Accent (global theme or custom) ----
     public static int first() {
+        if (!ClickGuiModule.guiSyncColor()) {
+            return ClickGuiModule.guiAccentColor().getRGB();
+        }
         return Theme.primary().getRGB();
     }
 
     public static int second() {
+        if (!ClickGuiModule.guiSyncColor()) {
+            return ClickGuiModule.guiAccentColor().getRGB();
+        }
         return Theme.secondary().getRGB();
     }
 
     public static int accent(int index) {
+        if (!ClickGuiModule.guiSyncColor()) {
+            return ClickGuiModule.guiAccentColor().getRGB();
+        }
         return Theme.accent(index).getRGB();
     }
 }

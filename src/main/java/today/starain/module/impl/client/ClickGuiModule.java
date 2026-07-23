@@ -8,8 +8,11 @@ import today.starain.module.Category;
 import today.starain.module.ClientModule;
 import today.starain.ui.clickgui.opal.OpalClickGUI;
 import today.starain.value.impl.BooleanValue;
+import today.starain.value.impl.ColorValue;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
+
+import java.awt.Color;
 
 public final class ClickGuiModule extends ClientModule {
     @Setter
@@ -26,6 +29,9 @@ public final class ClickGuiModule extends ClientModule {
 
     private final BooleanValue animations = new BooleanValue("Animations", true, this);
     private final NumberValue animSpeed = new NumberValue("Animation Speed", 0.25, 3.0, 1.0, 0.05, this, animations::get);
+
+    private final BooleanValue syncColor = new BooleanValue("Sync Color", true, this);
+    private final ColorValue accentColor = new ColorValue("Accent Color", new Color(91, 207, 250), this, () -> !syncColor.get());
 
     private final NumberValue guiX = new NumberValue("GUI X", -5000.0, 10000.0, 50.0, 1.0, this, () -> false);
     private final NumberValue guiY = new NumberValue("GUI Y", -5000.0, 10000.0, 50.0, 1.0, this, () -> false);
@@ -91,6 +97,16 @@ public final class ClickGuiModule extends ClientModule {
     public static float guiAccentTint() {
         ClickGuiModule m = get();
         return m != null ? m.accentIntensity.get().floatValue() / 100.0F : 0.4F;
+    }
+
+    public static boolean guiSyncColor() {
+        ClickGuiModule m = get();
+        return m == null || m.syncColor.get();
+    }
+
+    public static Color guiAccentColor() {
+        ClickGuiModule m = get();
+        return m != null ? m.accentColor.get() : new Color(91, 207, 250);
     }
 
     public static boolean guiAnimations() {
