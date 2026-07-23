@@ -16,9 +16,16 @@ public class Framebuffer {
     public double sizeMulti = 1;
     public int width, height;
     private int id;
+    private int format = GL_RGB;
 
     public Framebuffer(double sizeMulti) {
         this.sizeMulti = sizeMulti;
+        init();
+    }
+
+    public Framebuffer(double sizeMulti, boolean alpha) {
+        this.sizeMulti = sizeMulti;
+        this.format = alpha ? GL_RGBA : GL_RGB;
         init();
     }
 
@@ -45,7 +52,7 @@ public class Framebuffer {
         width = (int) (window.getWidth() * sizeMulti);
         height = (int) (window.getHeight() * sizeMulti);
 
-        ShaderHelper.textureImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, null);
+        ShaderHelper.textureImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, null);
         ShaderHelper.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 
         unbind();
