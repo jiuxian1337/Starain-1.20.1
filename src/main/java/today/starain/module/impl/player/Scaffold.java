@@ -148,7 +148,7 @@ public class Scaffold extends ClientModule {
     private float forwardInput, strafeInput;
     private float inputYaw;
     private float rawInputYaw;
-    private double lengthSqr = 4.5D * 4.5D;
+    private double lengthSqr = 6.0D * 6.0D;
 
     public Scaffold() {
         setName("Scaffold");
@@ -447,7 +447,7 @@ public class Scaffold extends ClientModule {
     }
 
     private void getBlockInfo() {
-        lengthSqr = 4.5D * 4.5D;
+        lengthSqr = 6.0D * 6.0D;
         blockPos = null;
         enumFacing = null;
 
