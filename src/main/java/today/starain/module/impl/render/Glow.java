@@ -18,13 +18,13 @@ import java.util.List;
 
 public class Glow extends ClientModule {
 
-    private static final int MAX_STOPS = 32;
+    private static final int MAX_STOPS = 128;
 
     private final BooleanValue syncColor = new BooleanValue("Sync Color", true, this);
     private final ColorValue color = new ColorValue("Color", new Color(0, 186, 255), this, () -> !syncColor.get());
     private final NumberValue radius = new NumberValue("Radius", 1.0, 32.0, 7.0, 1.0, this);
     private final NumberValue strength = new NumberValue("Strength", 0.1, 3.0, 1.0, 0.1, this);
-    private final NumberValue spread = new NumberValue("Color Spread", 0.0, 32.0, 7.0, 1.0, this, syncColor::get);
+    private final NumberValue spread = new NumberValue("Color Spread", 1.0, 200.0, 50.0, 1.0, this, syncColor::get);
     private final ModeValue blend = new ModeValue("Blend", "Normal", new String[]{"Normal", "Additive"}, this);
     private final BooleanValue antiAliasing = new BooleanValue("Anti-Aliasing", true, this);
     private final BooleanValue self = new BooleanValue("Self", false, this);
@@ -50,8 +50,10 @@ public class Glow extends ClientModule {
 
         int stops;
         float alpha;
+        float rate = spread.get().floatValue() / 100.0F;
+        int guiWidth = mc.getWindow().getGuiScaledWidth();
         if (syncColor.get()) {
-            stops = Math.max(2, Math.min(MAX_STOPS, spread.get().intValue() + 1));
+            stops = Math.max(2, Math.min(MAX_STOPS, Math.round(guiWidth * rate) + 1));
             alpha = 1.0F;
         } else {
             stops = 2;
@@ -60,7 +62,13 @@ public class Glow extends ClientModule {
 
         float[] colors = new float[stops * 3];
         for (int i = 0; i < stops; i++) {
-            Color stop = syncColor.get() ? Theme.accent(-i) : color.get();
+            Color stop;
+            if (syncColor.get()) {
+                float pixel = guiWidth * i / (float) (stops - 1);
+                stop = Theme.accent((int) (-pixel * rate));
+            } else {
+                stop = color.get();
+            }
             colors[i * 3] = stop.getRed() / 255.0F;
             colors[i * 3 + 1] = stop.getGreen() / 255.0F;
             colors[i * 3 + 2] = stop.getBlue() / 255.0F;

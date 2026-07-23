@@ -7,7 +7,7 @@ out vec4 color;
 
 const int DIRECTIONS = 24;
 const int STEPS = 4;
-const int MAX_STOPS = 32;
+const int MAX_STOPS = 128;
 const float TAU = 6.28318530718;
 
 uniform sampler2D uMask;
