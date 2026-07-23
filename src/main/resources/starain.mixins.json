@@ -11,6 +11,8 @@
                    "MixinPlayer"
                ],
     "client":  [
+                   "MixinChatComponent",
+                   "MixinChatScreen",
                    "MixinClientLevel",
                    "MixinClientPacketListener",
                    "MixinCommandSuggestions",

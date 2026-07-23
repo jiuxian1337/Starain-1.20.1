@@ -19,6 +19,7 @@ public class HUD extends ClientModule {
     private final NumberValue blurIterations = new NumberValue("Blur Iterations", 1F, 5F, 1F, 1F, this, blur::get);
     private final BooleanValue shadow = new BooleanValue("Shadow", false, this);
     private final ColorValue shadowColor = new ColorValue("Shadow Color", new Color(0, 0, 0, 120), this, shadow::get);
+    private final BooleanValue chatBackground = new BooleanValue("Chat Background", true, this);
 
     private final ModeValue themeMode = new ModeValue("Theme Mode", "Gradient", new String[]{"Solid", "Gradient", "Rainbow"}, this);
     private final ColorValue themePrimary = new ColorValue("Theme Primary", new Color(91, 207, 250), this);
@@ -57,6 +58,15 @@ public class HUD extends ClientModule {
 
     public static Color getShadowColor() {
         return Starain.getInstance().getModuleManager().getModule(HUD.class).shadowColor.get();
+    }
+
+    public static boolean isChatBackgroundEnabled() {
+        Starain starain = Starain.getInstance();
+        if (starain == null || starain.getModuleManager() == null) {
+            return false;
+        }
+        HUD hud = starain.getModuleManager().getModule(HUD.class);
+        return hud != null && hud.chatBackground.get();
     }
 
     @Override

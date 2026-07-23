@@ -14,9 +14,19 @@ public final class Theme {
     private Theme() {
     }
 
+    private static HUD cachedHud;
+
     private static HUD hud() {
+        HUD cached = cachedHud;
+        if (cached != null) {
+            return cached;
+        }
         Starain instance = Starain.getInstance();
-        return instance == null ? null : instance.getModuleManager().getModule(HUD.class);
+        if (instance == null || instance.getModuleManager() == null) {
+            return null;
+        }
+        cachedHud = instance.getModuleManager().getModule(HUD.class);
+        return cachedHud;
     }
 
     public static Color primary() {

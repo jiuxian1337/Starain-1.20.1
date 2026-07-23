@@ -530,6 +530,15 @@ public class Skia implements Wrapper {
         drawStyledText(getCanvas(), text, bx, by, font, paint);
     }
 
+    public static void drawThemeGradientRect(float x, float y, float width, float height, float gradientStartX,
+                                             float gradientEndX, int stops) {
+        if (width <= 0 || height <= 0) return;
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setShader(themeGradient(gradientStartX, gradientEndX, stops));
+        getCanvas().drawRect(Rect.makeXYWH(x, y, width, height), paint);
+    }
+
     // 水平方向的主题渐变，一个字符一个色标。stops 至少要有两个，makeLinearGradient 不接受单色标。
     private static Shader themeGradient(float startX, float endX, int stops) {
         int count = Math.max(stops, 2);

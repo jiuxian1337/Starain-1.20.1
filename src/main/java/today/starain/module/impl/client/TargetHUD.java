@@ -21,6 +21,7 @@ import today.starain.ui.clickgui.opal.OpalClickGUI;
 import today.starain.utils.animation.SmoothAnimationTimer;
 import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.font.Fonts;
+import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.NumberValue;
 
 import java.awt.*;
@@ -28,6 +29,7 @@ import java.awt.*;
 public class TargetHUD extends ClientModule {
     private final NumberValue x = new NumberValue("X", 0, 1000, 300, 1, this);
     private final NumberValue y = new NumberValue("y", 0, 1000, 300, 1, this);
+    private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final SmoothAnimationTimer heal = new SmoothAnimationTimer(20.0F);
     private final SmoothAnimationTimer alpha = new SmoothAnimationTimer(255.0F);
     private final SmoothAnimationTimer hurtAlpha = new SmoothAnimationTimer(0.0F);
@@ -78,11 +80,23 @@ public class TargetHUD extends ClientModule {
             Skia.getCanvas().clipPath(path, ClipMode.INTERSECT, true);
             Skia.drawRect(x + 40.0f, y + 30.5f, healBarWidth, 5.0f, new Color(0, 0, 0, 50));
             float healthWidth = (healBarWidth / 20.0f) * heal.value;
-            Skia.drawRect(x + 40.0f, y + 30.5f, healthWidth, 5.0f, new Color(200, 200, 200));
+            if (syncColor.get()) {
+                Skia.drawThemeGradientRect(x + 40.0f, y + 30.5f, healthWidth, 5.0f,
+                        x + 40.0f, x + 40.0f + healBarWidth, Math.max(2, Math.round(healBarWidth / 6.0f)));
+            } else {
+                Skia.drawRect(x + 40.0f, y + 30.5f, healthWidth, 5.0f, new Color(200, 200, 200));
+            }
             Skia.restore();
-            Skia.drawText(name, x + 40.0f, y + 4.5f, Design.TEXT_COLOR, miSans);
-            Skia.drawText("\ue87d", x + 40.0f, y + 18f, new Color(200, 200, 200), iconFill);
-            Skia.drawText(String.format("%.2f", heal.value), x + 40.0f + heartIconWidth, y + 17.5f, new Color(200, 200, 200), miSans);
+            String healthText = String.format("%.2f", heal.value);
+            if (syncColor.get()) {
+                Skia.drawGradientText(name, x + 40.0f, y + 4.5f, miSans);
+                Skia.drawGradientText("\ue87d", x + 40.0f, y + 18f, iconFill);
+                Skia.drawGradientText(healthText, x + 40.0f + heartIconWidth, y + 17.5f, miSans);
+            } else {
+                Skia.drawText(name, x + 40.0f, y + 4.5f, Design.TEXT_COLOR, miSans);
+                Skia.drawText("\ue87d", x + 40.0f, y + 18f, new Color(200, 200, 200), iconFill);
+                Skia.drawText(healthText, x + 40.0f + heartIconWidth, y + 17.5f, new Color(200, 200, 200), miSans);
+            }
             path.close();
             Skia.restore();
         }
