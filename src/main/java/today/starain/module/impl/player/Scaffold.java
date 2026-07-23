@@ -419,13 +419,10 @@ public class Scaffold extends ClientModule {
         if (event.getType() != EventType.PRE) {
             return;
         }
-        // 每游戏 tick 老化一次：寿命 -1，耗尽移除。停止放置后不再刷新 -> 轨迹由远及近淡出回收。
         espTrail.removeIf(box -> --box.life <= 0);
     }
 
     private void recordEspTrail() {
-        // 记录“实际放置的那一格”= blockPos 被点击面外侧 = blockPos.relative(enumFacing)，
-        // 而不是被点击的支撑块本身，避免高亮相对放置块前后错位。
         if (blockPos == null || enumFacing == null) {
             return;
         }
@@ -648,9 +645,7 @@ public class Scaffold extends ClientModule {
         int count = blocks.size();
         for (int i = 0; i < count; i++) {
             EspBox e = blocks.get(i);
-            // 寿命比例：刚放置=1(深)、越旧越低(浅)；停止放置后整体下降 -> 回收淡出。
             float lifeFrac = Math.max(0.0F, Math.min(1.0F, e.life / (float) ESP_LIFE));
-            // Sync 开：颜色按主题逐块渐变；关：单一自定义色。
             Color c = espSync.get() ? Theme.accent((int) (-i * indexMultiplier.get().floatValue())) : base;
             float r = c.getRed() / 255.0F;
             float g = c.getGreen() / 255.0F;
@@ -663,7 +658,6 @@ public class Scaffold extends ClientModule {
                 drawSolidBox(box, stack);
             }
             if (espOutline.get()) {
-                // 描边也随寿命淡化（比填充稍亮一点便于看清边）。
                 RenderSystem.setShaderColor(r, g, b, Math.min(1.0F, a * 1.6F));
                 drawOutlinedBox(box, stack);
             }
