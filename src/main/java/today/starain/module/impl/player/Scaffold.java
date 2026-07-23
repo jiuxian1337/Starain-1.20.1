@@ -2,18 +2,8 @@ package today.starain.module.impl.player;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import io.github.humbleui.skija.Font;
-import io.github.humbleui.skija.Paint;
-import net.minecraft.client.Camera;
+import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.CameraType;
-import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
@@ -22,7 +12,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.minecraft.world.level.block.*;
@@ -31,7 +20,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import today.starain.Starain;
 import today.starain.event.api.EventType;
 import today.starain.event.api.Priority;
@@ -41,30 +29,25 @@ import today.starain.event.impl.GameTickEvent;
 import today.starain.event.impl.MoveInputEvent;
 import today.starain.event.impl.PlayerTickEvent;
 import today.starain.event.impl.RenderWorldEvent;
-import today.starain.event.impl.RotationAnimationEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
+import today.starain.ui.Theme;
 import today.starain.utils.client.ChatUtils;
 import today.starain.utils.math.MathUtils;
 import today.starain.utils.player.FallingPlayer;
-import today.starain.utils.player.InventoryUtils;
 import today.starain.utils.player.MoveUtils;
-import today.starain.utils.render.skia.Skia;
 import today.starain.utils.rotation.RayCastUtil;
 import today.starain.utils.rotation.Rotation;
 import today.starain.utils.rotation.RotationManager;
 import today.starain.utils.rotation.RotationUtils;
-import today.starain.ui.Theme;
 import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ColorValue;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import static today.starain.utils.player.InventoryUtils.blacklistedBlocks;
 
 public class Scaffold extends ClientModule {
     private static final List<Block> BLACKLISTED_BLOCKS = List.of(
@@ -419,13 +402,10 @@ public class Scaffold extends ClientModule {
         if (event.getType() != EventType.PRE) {
             return;
         }
-        // 每游戏 tick 老化一次：寿命 -1，耗尽移除。停止放置后不再刷新 -> 轨迹由远及近淡出回收。
         espTrail.removeIf(box -> --box.life <= 0);
     }
 
     private void recordEspTrail() {
-        // 记录“实际放置的那一格”= blockPos 被点击面外侧 = blockPos.relative(enumFacing)，
-        // 而不是被点击的支撑块本身，避免高亮相对放置块前后错位。
         if (blockPos == null || enumFacing == null) {
             return;
         }
@@ -648,9 +628,7 @@ public class Scaffold extends ClientModule {
         int count = blocks.size();
         for (int i = 0; i < count; i++) {
             EspBox e = blocks.get(i);
-            // 寿命比例：刚放置=1(深)、越旧越低(浅)；停止放置后整体下降 -> 回收淡出。
             float lifeFrac = Math.max(0.0F, Math.min(1.0F, e.life / (float) ESP_LIFE));
-            // Sync 开：颜色按主题逐块渐变；关：单一自定义色。
             Color c = espSync.get() ? Theme.accent((int) (-i * indexMultiplier.get().floatValue())) : base;
             float r = c.getRed() / 255.0F;
             float g = c.getGreen() / 255.0F;
@@ -663,7 +641,6 @@ public class Scaffold extends ClientModule {
                 drawSolidBox(box, stack);
             }
             if (espOutline.get()) {
-                // 描边也随寿命淡化（比填充稍亮一点便于看清边）。
                 RenderSystem.setShaderColor(r, g, b, Math.min(1.0F, a * 1.6F));
                 drawOutlinedBox(box, stack);
             }

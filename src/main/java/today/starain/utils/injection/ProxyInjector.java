@@ -4,26 +4,28 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Enumeration;
 
 public final class ProxyInjector {
 
-    private ProxyInjector() {}
+    private ProxyInjector() {
+    }
 
     public static final int PROXY_PORT = 25565;
 
     private static volatile String sFailReason;
     private static volatile boolean sInjected;
-    private static volatile Path   sDllPath;
+    private static volatile Path sDllPath;
 
     public static long lastBujiPid() {
         if (!NativeInjector.isLoaded()) return 0L;
-        try { return NativeInjector.getLastInjectedPid(); }
-        catch (Throwable t) { return 0L; }
+        try {
+            return NativeInjector.getLastInjectedPid();
+        } catch (Throwable t) {
+            return 0L;
+        }
     }
 
     private static final String PROXY_RES_PATH = "/assets/starain/native/MinecraftProxy_msvc.dll";
@@ -31,13 +33,19 @@ public final class ProxyInjector {
     public static Path findProxyDllPath() {
 
         return NativeInjector.extractResource(PROXY_RES_PATH,
-                                              "MinecraftProxy_msvc_", ".dll");
+                "MinecraftProxy_msvc_", ".dll");
     }
 
-    public static void markFailed(String reason) { sFailReason = reason; sInjected = false; }
+    public static void markFailed(String reason) {
+        sFailReason = reason;
+        sInjected = false;
+    }
 
     public static void markInjectedIfListening() {
-        if (isProxyListening()) { sInjected = true; sFailReason = null; }
+        if (isProxyListening()) {
+            sInjected = true;
+            sFailReason = null;
+        }
     }
 
     private static String mapNativeErr(String err) {
@@ -94,9 +102,17 @@ public final class ProxyInjector {
         return true;
     }
 
-    public static boolean isInjected()   { return sInjected; }
-    public static String  failReason()   { return sFailReason; }
-    public static Path    resolvedDll()  { return sDllPath; }
+    public static boolean isInjected() {
+        return sInjected;
+    }
+
+    public static String failReason() {
+        return sFailReason;
+    }
+
+    public static Path resolvedDll() {
+        return sDllPath;
+    }
 
     public static boolean isProxyListening() {
         try (Socket s = new Socket()) {
@@ -114,18 +130,21 @@ public final class ProxyInjector {
                 if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) continue;
                 String name = ni.getDisplayName() == null ? "" : ni.getDisplayName().toLowerCase();
                 if (name.contains("virtual") || name.contains("vethernet") ||
-                    name.contains("vmware") || name.contains("virtualbox") ||
-                    name.contains("wsl") || name.contains("hyper-v")) continue;
+                        name.contains("vmware") || name.contains("virtualbox") ||
+                        name.contains("wsl") || name.contains("hyper-v")) continue;
                 for (java.net.InetAddress a : Collections.list(ni.getInetAddresses())) {
                     if (a instanceof java.net.Inet4Address &&
-                        !a.isLoopbackAddress() && !a.isLinkLocalAddress()) {
+                            !a.isLoopbackAddress() && !a.isLinkLocalAddress()) {
                         return a.getHostAddress();
                     }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
-    private static String nz(String s) { return s == null ? "" : s; }
+    private static String nz(String s) {
+        return s == null ? "" : s;
+    }
 }

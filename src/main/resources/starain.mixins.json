@@ -11,12 +11,16 @@
                    "MixinPlayer"
                ],
     "client":  [
+                   "MixinChatComponent",
+                   "MixinChatScreen",
                    "MixinClientLevel",
                    "MixinClientPacketListener",
                    "MixinCommandSuggestions",
                    "MixinEntityRenderer",
                    "MixinGameRenderer",
                    "MixinGui",
+                   "MixinItemEntityRenderer",
+                   "MixinItemInHandRenderer",
                    "MixinKeyboardHandler",
                    "MixinKeyboardInput",
                    "MixinLightTexture",

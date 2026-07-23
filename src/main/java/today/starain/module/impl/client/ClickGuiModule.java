@@ -12,7 +12,7 @@ import today.starain.value.impl.ColorValue;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
-import java.awt.Color;
+import java.awt.*;
 
 public final class ClickGuiModule extends ClientModule {
     @Setter

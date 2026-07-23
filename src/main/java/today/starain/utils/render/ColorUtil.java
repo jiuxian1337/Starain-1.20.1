@@ -219,15 +219,19 @@ public class ColorUtil {
     }
 
     public static Color rainbow(int speed, int index, float saturation, float brightness, float opacity) {
-        int angle = (int) ((System.currentTimeMillis() / speed + index) % 360);
+        int step = Math.max(1, speed);
+        float angle = ((System.currentTimeMillis() % (360L * step)) / (float) step + index) % 360.0f;
+        if (angle < 0.0f) angle += 360.0f;
         float hue = angle / 360f;
         Color color = new Color(Color.HSBtoRGB(hue, saturation, brightness));
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.max(0, Math.min(255, (int) (opacity * 255))));
     }
 
     public static Color interpolateColorsBackAndForth(int speed, int index, Color start, Color end, boolean trueColor) {
-        int angle = (int) (((System.currentTimeMillis()) / speed + index) % 360);
-        angle = (angle >= 180 ? 360 - angle : angle) * 2;
+        int step = Math.max(1, speed);
+        float angle = ((System.currentTimeMillis() % (360L * step)) / (float) step + index) % 360.0f;
+        if (angle < 0.0f) angle += 360.0f;
+        angle = (angle >= 180.0f ? 360.0f - angle : angle) * 2.0f;
         return trueColor ? ColorUtil.interpolateColorHue(start, end, angle / 360f) : ColorUtil.interpolateColorC(start, end, angle / 360f);
     }
 

@@ -1,6 +1,5 @@
 package today.starain.event.impl;
 
-import lombok.AllArgsConstructor;
 import net.minecraft.client.gui.screens.Screen;
 import today.starain.event.api.Event;
 

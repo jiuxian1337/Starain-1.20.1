@@ -39,6 +39,7 @@ public class KillAura extends ClientModule {
 
     public static List<Entity> targets;
     private final BooleanValue hitSel = new BooleanValue("Hit select", true, this);
+    private final BooleanValue attackInvisible = new BooleanValue("Attack Invisible", true, this);
     private final NumberValue cps = new NumberValue("CPS", 1.0, 20.0, 12.0, 1.0, this);
     private final NumberValue aimRange = new NumberValue("Aim range", 3.0, 6.0, 4.0, 0.01, this);
     private final NumberValue fov = new NumberValue("FOV", 0.0, 360.0, 180.0, 1.0, this);
@@ -58,11 +59,13 @@ public class KillAura extends ClientModule {
 
     @EventTarget
     public void onGameTick(GameTickEvent event) {
-        if (mc.player == null || event.getType() != EventType.PRE || Starain.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled()) return;
+        if (mc.player == null || event.getType() != EventType.PRE || Starain.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled())
+            return;
         Stream<Entity> stream = StreamSupport.stream(mc.level.entitiesForRendering().spliterator(), true)
                 .filter(entity -> entity instanceof Entity)
                 .filter((entity) -> {
                     boolean b = Target.isTarget(entity)
+                            && (attackInvisible.get() || !(entity instanceof Player && entity.isInvisible()))
                             && !Teams.isSameTeam(entity)
                             && !AntiBot.isBot(entity)
                             && RotationUtils.getDistance(entity) <= aimRange.get().floatValue()

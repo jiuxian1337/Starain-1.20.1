@@ -18,9 +18,9 @@ public abstract class MixinScreenJoiningOverlay {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void starain$paintJoiningOverlay(GuiGraphics guiGraphics,
-                                              int mouseX, int mouseY,
-                                              float partialTick,
-                                              CallbackInfo ci) {
+                                             int mouseX, int mouseY,
+                                             float partialTick,
+                                             CallbackInfo ci) {
         if (!InjectedJoinScreen.isJoining()) return;
         try {
             SkiaContext.draw((context) -> {

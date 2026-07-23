@@ -119,8 +119,8 @@ public class EventManager {
     }
 
     /**
-         * A pre-resolved handler: an already-accessible method bound to its target instance.
-         */
-        private record Listener(Object target, Method method, int priority) {
+     * A pre-resolved handler: an already-accessible method bound to its target instance.
+     */
+    private record Listener(Object target, Method method, int priority) {
     }
 }

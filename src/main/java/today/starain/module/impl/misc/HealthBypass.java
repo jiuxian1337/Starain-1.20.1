@@ -2,7 +2,6 @@ package today.starain.module.impl.misc;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.PacketEvent;
@@ -16,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HealthBypass extends ClientModule {
     public static final Map<String, AtomicInteger> HEALTHS = new HashMap<>();
+
     public HealthBypass() {
         setName("HealthBypass");
         setCategory(Category.MISC);
@@ -40,7 +40,7 @@ public class HealthBypass extends ClientModule {
     public void onRender(RenderSkiaEvent event) {
         for (AbstractClientPlayer player : Minecraft.getInstance().level.players()) {
             if (player != Minecraft.getInstance().player && HEALTHS.containsKey(player.getName().getString())) {
-                player.setHealth((float)Math.max(0.01, HEALTHS.get(player.getName().getString()).get()));
+                player.setHealth((float) Math.max(0.01, HEALTHS.get(player.getName().getString()).get()));
             }
         }
     }
