@@ -651,7 +651,8 @@ public class Scaffold extends ClientModule {
             // 寿命比例：刚放置=1(深)、越旧越低(浅)；停止放置后整体下降 -> 回收淡出。
             float lifeFrac = Math.max(0.0F, Math.min(1.0F, e.life / (float) ESP_LIFE));
             // Sync 开：颜色按主题逐块渐变；关：单一自定义色。
-            Color c = espSync.get() ? Theme.accent((int) (-i * indexMultiplier.get().floatValue())) : base;
+            int index = Math.abs(e.pos.getX() + e.pos.getY() + e.pos.getZ()) % 100;
+            Color c = espSync.get() ? Theme.accent((int) (-index * indexMultiplier.get().floatValue())) : base;
             float r = c.getRed() / 255.0F;
             float g = c.getGreen() / 255.0F;
             float b = c.getBlue() / 255.0F;

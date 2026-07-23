@@ -6,8 +6,10 @@ import today.starain.event.api.annotations.EventPriority;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.GameTickEvent;
 import today.starain.event.impl.MotionEvent;
+import today.starain.event.impl.MoveInputEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
+import today.starain.utils.client.ChatUtils;
 
 public class Criticals extends ClientModule {
     public static int fallTicks;
@@ -27,24 +29,26 @@ public class Criticals extends ClientModule {
         } else {
             fallTicks++;
             if (KillAura.targets != null && !KillAura.targets.isEmpty() && Velocity.attackQueue == 0) {
-                mc.options.keySprint.setDown(false);
-                mc.player.setSprinting(false);
                 stopSprint = true;
             }
         }
     }
 
     @EventTarget
-    public void onMotion(MotionEvent event) {
-        if (event.getType() != EventType.PRE || !stopSprint) return;
+    public void onMoveInput(MoveInputEvent event) {
+        if (!stopSprint) return;
         stopSprint = false;
-        mc.player.setSprinting(false);
-        mc.options.keySprint.setDown(false);
+        event.setForward(0);
     }
 
     @Override
     public void onDisable() {
         fallTicks = 0;
         stopSprint = false;
+    }
+
+    @Override
+    protected void onEnable() {
+        ChatUtils.addChatMessage("我操为什么这个斯大林的刀爆和反击退打架");
     }
 }
