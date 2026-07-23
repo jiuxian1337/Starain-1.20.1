@@ -58,7 +58,8 @@ public class KillAura extends ClientModule {
 
     @EventTarget
     public void onGameTick(GameTickEvent event) {
-        if (mc.player == null || event.getType() != EventType.PRE || Starain.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled()) return;
+        if (mc.player == null || event.getType() != EventType.PRE || Starain.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled())
+            return;
         Stream<Entity> stream = StreamSupport.stream(mc.level.entitiesForRendering().spliterator(), true)
                 .filter(entity -> entity instanceof Entity)
                 .filter((entity) -> {

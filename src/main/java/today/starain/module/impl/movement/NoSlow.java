@@ -112,9 +112,7 @@ public class NoSlow extends ClientModule {
             packets.add((Packet<ClientGamePacketListener>) packet);
         }
 
-        if (event.getType() == EventType.OUTGOING
-                && packet instanceof ServerboundPlayerActionPacket actionPacket
-                && actionPacket.getAction() == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
+        if (event.getType() == EventType.OUTGOING && packet instanceof ServerboundPlayerActionPacket actionPacket && actionPacket.getAction() == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
             eating = false;
             ticks = 0;
             flush();
@@ -141,7 +139,6 @@ public class NoSlow extends ClientModule {
 
     @EventTarget
     private void onMoveInput(MoveInputEvent event) {
-        if (mc.player == null) return;
         if (mode.isMode("Jump") && mc.player.onGround() && mc.player.isUsingItem() && (event.getForward() != 0 || event.getStrafe() != 0)) {
             event.setJump(true);
         }

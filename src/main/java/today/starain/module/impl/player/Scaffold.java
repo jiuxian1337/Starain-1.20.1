@@ -2,18 +2,8 @@ package today.starain.module.impl.player;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import io.github.humbleui.skija.Font;
-import io.github.humbleui.skija.Paint;
-import net.minecraft.client.Camera;
+import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.CameraType;
-import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
@@ -22,7 +12,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.minecraft.world.level.block.*;
@@ -31,7 +20,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import today.starain.Starain;
 import today.starain.event.api.EventType;
 import today.starain.event.api.Priority;
@@ -41,30 +29,25 @@ import today.starain.event.impl.GameTickEvent;
 import today.starain.event.impl.MoveInputEvent;
 import today.starain.event.impl.PlayerTickEvent;
 import today.starain.event.impl.RenderWorldEvent;
-import today.starain.event.impl.RotationAnimationEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
+import today.starain.ui.Theme;
 import today.starain.utils.client.ChatUtils;
 import today.starain.utils.math.MathUtils;
 import today.starain.utils.player.FallingPlayer;
-import today.starain.utils.player.InventoryUtils;
 import today.starain.utils.player.MoveUtils;
-import today.starain.utils.render.skia.Skia;
 import today.starain.utils.rotation.RayCastUtil;
 import today.starain.utils.rotation.Rotation;
 import today.starain.utils.rotation.RotationManager;
 import today.starain.utils.rotation.RotationUtils;
-import today.starain.ui.Theme;
 import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ColorValue;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import static today.starain.utils.player.InventoryUtils.blacklistedBlocks;
 
 public class Scaffold extends ClientModule {
     private static final List<Block> BLACKLISTED_BLOCKS = List.of(

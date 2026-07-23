@@ -5,7 +5,6 @@ import today.starain.event.api.Priority;
 import today.starain.event.api.annotations.EventPriority;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.GameTickEvent;
-import today.starain.event.impl.MotionEvent;
 import today.starain.event.impl.MoveInputEvent;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
@@ -24,7 +23,7 @@ public class Criticals extends ClientModule {
     @EventTarget
     public void onGameTick(GameTickEvent event) {
         if (mc.player == null || event.getType() != EventType.PRE) return;
-        if (mc.player.fallDistance <= 0 || mc.player.fallDistance >= 1 ) {
+        if (mc.player.fallDistance <= 0 || mc.player.fallDistance >= 1) {
             fallTicks = 0;
         } else {
             fallTicks++;

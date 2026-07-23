@@ -3,7 +3,6 @@ package today.starain.utils.injection;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 public final class NativeInjector {
@@ -11,7 +10,7 @@ public final class NativeInjector {
     private static final String RES_PATH = "/assets/starain/native/starain_inject.dll";
 
     private static boolean sLoaded;
-    private static String  sLoadError;
+    private static String sLoadError;
 
     public static synchronized boolean ensureLoaded() {
         if (sLoaded) return true;
@@ -30,8 +29,13 @@ public final class NativeInjector {
         }
     }
 
-    public static boolean isLoaded()   { return sLoaded; }
-    public static String  loadError()  { return sLoadError; }
+    public static boolean isLoaded() {
+        return sLoaded;
+    }
+
+    public static String loadError() {
+        return sLoadError;
+    }
 
     private static Path resolveLibraryPath() {
 
@@ -54,7 +58,10 @@ public final class NativeInjector {
 
     public static native long getLastInjectedPid();
 
-    private static String nz(String s) { return s == null ? "" : s; }
+    private static String nz(String s) {
+        return s == null ? "" : s;
+    }
 
-    private NativeInjector() {}
+    private NativeInjector() {
+    }
 }

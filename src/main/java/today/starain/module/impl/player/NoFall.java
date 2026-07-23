@@ -15,6 +15,7 @@ public class NoFall extends ClientModule {
     private final NumberValue fallDistance = new NumberValue("FallDistance", 3.0, 15.0, 3.0, 0.1, this);
     private float grimLastFallDistance;
     private boolean grimQueuedJump;
+
     public NoFall() {
         setName("NoFall");
         setCategory(Category.PLAYER);
