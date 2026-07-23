@@ -3,12 +3,15 @@ package today.starain.mixin;
 import com.mojang.blaze3d.platform.Window;
 import io.github.humbleui.skija.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import today.starain.Starain;
 import today.starain.event.impl.RenderSkiaEvent;
@@ -82,6 +85,20 @@ public class MixinGui {
             cancellable = true
     )
     private void onDisplayScoreboardSidebar(GuiGraphics guiGraphics, Objective objective, CallbackInfo ci) {
+        ScoreboardModule.resetVanillaLineCounter();
         ScoreboardModule.renderSB(guiGraphics, objective, ci);
+    }
+
+    // 原版模式下逐行名字/标题的 drawString：把底行(IP行)换成流动渐变 IP，字体沿用 vanilla font。
+    // 自绘模式此方法在 HEAD 已 cancel，redirect 不会触发。
+    @Redirect(
+            method = "displayScoreboardSidebar(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/world/scores/Objective;)V",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)I"
+            )
+    )
+    private int starain$scoreboardLine(GuiGraphics guiGraphics, Font font, Component text, int x, int y, int color, boolean shadow) {
+        return ScoreboardModule.drawVanillaLine(guiGraphics, font, text, x, y, color, shadow);
     }
 }
