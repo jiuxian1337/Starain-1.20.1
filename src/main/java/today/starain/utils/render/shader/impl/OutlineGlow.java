@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -50,6 +51,30 @@ public class OutlineGlow {
 
     private static void put(Map<RenderType, BufferBuilder> map, RenderType renderType) {
         map.put(renderType, new BufferBuilder(renderType.bufferSize()));
+    }
+
+    private static void bobHurt(PoseStack poseStack, float partialTick) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.getCameraEntity() instanceof LivingEntity living)) {
+            return;
+        }
+
+        float hurt = (float) living.hurtTime - partialTick;
+        if (living.isDeadOrDying()) {
+            float death = Math.min((float) living.deathTime + partialTick, 20.0F);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(40.0F - 8000.0F / (death + 200.0F)));
+        }
+        if (hurt < 0.0F) {
+            return;
+        }
+
+        hurt /= (float) living.hurtDuration;
+        hurt = Mth.sin(hurt * hurt * hurt * hurt * (float) Math.PI);
+        float dir = living.getHurtDir();
+        poseStack.mulPose(Axis.YP.rotationDegrees(-dir));
+        float tilt = (float) ((double) (-hurt) * 14.0 * mc.options.damageTiltStrength().get());
+        poseStack.mulPose(Axis.ZP.rotationDegrees(tilt));
+        poseStack.mulPose(Axis.YP.rotationDegrees(dir));
     }
 
     private static void bobView(PoseStack poseStack, Player player, float partialTick) {
@@ -128,6 +153,7 @@ public class OutlineGlow {
 
             poseStack.pushPose();
             poseStack.setIdentity();
+            bobHurt(poseStack, partialTick);
             if (mc.options.bobView().get()) {
                 bobView(poseStack, mc.player, partialTick);
             }

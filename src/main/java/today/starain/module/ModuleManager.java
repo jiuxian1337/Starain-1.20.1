@@ -20,6 +20,7 @@ import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.Animations;
 import today.starain.module.impl.render.FullBright;
 import today.starain.module.impl.render.Glow;
+import today.starain.module.impl.render.ItemPhysics;
 import today.starain.module.impl.render.TargetESP;
 import today.starain.module.impl.render.NameTags;
 import today.starain.module.impl.render.TimeChanger;
@@ -42,6 +43,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new Animations());
         modules.add(new TargetESP());
         modules.add(new Glow());
+        modules.add(new ItemPhysics());
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
