@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -92,7 +93,7 @@ public class OutlineGlow {
     private int width;
     private int height;
 
-    public void draw(PoseStack poseStack, float partialTick, List<Player> targets,
+    public void draw(PoseStack poseStack, float partialTick, List<? extends Entity> targets,
                      float[] colors, int stops, float alpha, float radius, float strength, boolean antiAliasing,
                      boolean renderHand, boolean additive) {
         Minecraft mc = Minecraft.getInstance();
@@ -130,7 +131,7 @@ public class OutlineGlow {
         dispatcher.setRenderShadow(false);
 
         Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
-        for (Player player : targets) {
+        for (Entity player : targets) {
             try {
                 double dx = Mth.lerp(partialTick, player.xo, player.getX()) - camera.x;
                 double dy = Mth.lerp(partialTick, player.yo, player.getY()) - camera.y;

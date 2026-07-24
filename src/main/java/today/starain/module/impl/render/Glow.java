@@ -1,5 +1,7 @@
 package today.starain.module.impl.render;
 
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.RenderWorldEvent;
@@ -27,6 +29,8 @@ public class Glow extends ClientModule {
     private final NumberValue spread = new NumberValue("Color Spread", 1.0, 200.0, 50.0, 1.0, this, syncColor::get);
     private final ModeValue blend = new ModeValue("Blend", "Normal", new String[]{"Normal", "Additive"}, this);
     private final BooleanValue antiAliasing = new BooleanValue("Anti-Aliasing", true, this);
+    private final BooleanValue players = new BooleanValue("Players", true, this);
+    private final BooleanValue items = new BooleanValue("Items", false, this);
     private final BooleanValue self = new BooleanValue("Self", false, this);
 
     public Glow() {
@@ -39,13 +43,22 @@ public class Glow extends ClientModule {
         if (mc.level == null || mc.player == null) return;
 
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
-        List<Player> targets = new ArrayList<>();
-        for (Player player : mc.level.players()) {
-            if (player == mc.player && (!self.get() || firstPerson)) continue;
-            if (!player.isAlive() || player.isSpectator() || player.isInvisible()) continue;
-            targets.add(player);
+        List<Entity> targets = new ArrayList<>();
+        if (players.get()) {
+            for (Player player : mc.level.players()) {
+                if (player == mc.player && (!self.get() || firstPerson)) continue;
+                if (!player.isAlive() || player.isSpectator() || player.isInvisible()) continue;
+                targets.add(player);
+            }
         }
-        boolean handGlow = self.get() && firstPerson;
+        if (items.get()) {
+            for (Entity entity : mc.level.entitiesForRendering()) {
+                if (entity instanceof ItemEntity item && item.isAlive()) {
+                    targets.add(item);
+                }
+            }
+        }
+        boolean handGlow = self.get() && players.get() && firstPerson;
         if (targets.isEmpty() && !handGlow) return;
 
         int stops;
