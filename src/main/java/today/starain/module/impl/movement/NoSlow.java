@@ -33,6 +33,7 @@ public class NoSlow extends ClientModule {
     private int onGroundTick = 0;
     private boolean eating;
     private final LinkedBlockingQueue<Packet<ClientGamePacketListener>> packets = new LinkedBlockingQueue<>();
+    private final NoSlowFullMode fullMode = new NoSlowFullMode();
 
     public NoSlow() {
         setName("NoSlow");
@@ -45,6 +46,7 @@ public class NoSlow extends ClientModule {
         eating = false;
         ticks = 0;
         useDuration = 32;
+        fullMode.onDisable();
     }
 
     @EventTarget
@@ -57,67 +59,15 @@ public class NoSlow extends ClientModule {
             onGroundTick = 0;
         }
 
-        if (!mode.isMode("GrimFull") || mc.player.tickCount < 30) return;
-
-        if (eating) ticks++;
-
-        UseAnim anim = mc.player.getUseItem().getUseAnimation();
-        if (mc.player.isUsingItem() && (anim == UseAnim.EAT || anim == UseAnim.DRINK || anim == UseAnim.CROSSBOW) && !eating) {
-            eating = true;
-            ticks = 0;
-            ItemStack useItem = mc.player.getUseItem();
-            useDuration = useItem.getItem().getUseDuration(useItem);
-        }
-
-        if (eating) {
-            if (ticks == 1) {
-                NetworkUtils.sendPacketNoEvent(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ZERO, Direction.DOWN));
-                NetworkUtils.sendPacketNoEvent(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN));
-            }
-            if (ticks == 2) {
-                InteractionHand hand = mc.player.getUsedItemHand() == InteractionHand.OFF_HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-                mc.getConnection().send(new ServerboundUseItemPacket(hand, mc.level.getBlockStatePredictionHandler().startPredicting().currentSequence()));
-            }
-            if (ticks > useDuration + 3) {
-                mc.getConnection().send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN));
-                mc.options.keyUse.setDown(false);
-                ticks = 0;
-                eating = false;
-            }
+        if (mode.isMode("GrimFull") && mc.player.tickCount >= 30) {
+            fullMode.onPreTick();
         }
     }
 
     @EventTarget
     private void onPacket(PacketEvent event) {
-        if (mc.player == null || mc.player.tickCount < 30 || !eating || !mode.isMode("GrimFull")) return;
-
-        Packet<?> packet = event.getPacket();
-
-        if (event.getType() == EventType.INCOMING) {
-            if (packet instanceof ClientboundPlayerPositionPacket) {
-                flush();
-                return;
-            }
-            if (packet instanceof ClientboundSetHealthPacket
-                    || packet instanceof ClientboundSystemChatPacket
-                    || packet instanceof ClientboundMoveEntityPacket
-                    || packet instanceof ClientboundTeleportEntityPacket
-                    || packet instanceof ClientboundEntityEventPacket
-                    || packet instanceof ClientboundAddEntityPacket
-                    || packet instanceof ClientboundBlockUpdatePacket
-                    || packet instanceof ClientboundBlockEventPacket) {
-                return;
-            }
-            event.setCancelled(true);
-            packets.add((Packet<ClientGamePacketListener>) packet);
-        }
-
-        if (event.getType() == EventType.OUTGOING && packet instanceof ServerboundPlayerActionPacket actionPacket && actionPacket.getAction() == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
-            eating = false;
-            ticks = 0;
-            flush();
-            NetworkUtils.sendPacketNoEvent(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ZERO, Direction.DOWN));
-        }
+        if (mc.player == null || mc.player.tickCount < 30 || !mode.isMode("GrimFull")) return;
+        fullMode.onPacket(event);
     }
 
     @EventTarget
@@ -130,7 +80,7 @@ public class NoSlow extends ClientModule {
 
         switch (mode.get()) {
             case "Vanilla" -> event.setCancelled(true);
-            case "GrimFull" -> grimFull(event);
+            case "GrimFull" -> fullMode.onSlow(event);
             case "Jump" -> jump(event);
             case "Grim1/2" -> grim50(event);
             case "Grim1/3" -> grim33(event);
@@ -139,16 +89,13 @@ public class NoSlow extends ClientModule {
 
     @EventTarget
     private void onMoveInput(MoveInputEvent event) {
+        if (mc.player == null) return;
+        if (mode.isMode("GrimFull")) {
+            fullMode.onMoveInput(event);
+            return;
+        }
         if (mode.isMode("Jump") && mc.player.onGround() && mc.player.isUsingItem() && (event.getForward() != 0 || event.getStrafe() != 0)) {
             event.setJump(true);
-        }
-    }
-
-    private void grimFull(SlowdownEvent event) {
-        UseAnim anim = mc.player.getUseItem().getUseAnimation();
-        if (mc.player.isUsingItem() && mc.player.getUseItemRemainingTicks() < 30 && (anim == UseAnim.EAT || anim == UseAnim.DRINK)) {
-            event.setCancelled(true);
-            mc.player.setSprinting(true);
         }
     }
 

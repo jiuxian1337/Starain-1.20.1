@@ -93,6 +93,8 @@ public final class OpalTheme {
         return Theme.secondary().getRGB();
     }
 
+    public static final float ACCENT_RATE = 0.1F;
+
     public static int accent(int index) {
         if (!ClickGuiModule.guiSyncColor()) {
             return ClickGuiModule.guiAccentColor().getRGB();
