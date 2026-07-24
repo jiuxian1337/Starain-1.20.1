@@ -35,7 +35,6 @@ public class NoFall extends ClientModule {
     private final NumberValue rotateSpeed = new NumberValue("Rotation Speed", 1.0, 180.0, 180.0, 1.0, this, () -> mode.isMode("WaterBucket"));
     private final BooleanValue solidCheck = new BooleanValue("SolidCheck", true, this, () -> mode.isMode("WaterBucket"));
     private final BooleanValue retrieve = new BooleanValue("Retrieve", true, this, () -> mode.isMode("WaterBucket"));
-    private final NumberValue retrieveDelay = new NumberValue("Retrieve Delay", 0.0, 10.0, 0.0, 1.0, this, () -> mode.isMode("WaterBucket") && retrieve.get());
     private final BooleanValue antiFire = new BooleanValue("AntiFire", true, this, () -> mode.isMode("WaterBucket"));
 
     // ---- Grim 模式状态 ----
@@ -47,7 +46,6 @@ public class NoFall extends ClientModule {
     private boolean attemptedThisFall;
     private boolean retrievePending;
     private int retrieveTriesLeft;
-    private int retrieveWaitTicks;
     private Integer retrieveSlot;
     private BlockPos placedWaterPos;
     private boolean lastChanceSkipApplied;
@@ -75,7 +73,6 @@ public class NoFall extends ClientModule {
         attemptedThisFall = false;
         retrievePending = false;
         retrieveTriesLeft = 0;
-        retrieveWaitTicks = 0;
         retrieveSlot = null;
         placedWaterPos = null;
         lastChanceSkipApplied = false;
@@ -120,13 +117,6 @@ public class NoFall extends ClientModule {
 
 
         if (retrievePending) {
-            if (!mc.player.onGround() && mc.player.fallDistance > 0.0F) {
-                return;
-            }
-            if (retrieveWaitTicks > 0) {
-                retrieveWaitTicks--;
-                return;
-            }
             if (retrieveTriesLeft-- <= 0) {
                 retrievePending = false;
                 return;
@@ -230,14 +220,9 @@ public class NoFall extends ClientModule {
         Integer waterSlot = InventoryUtils.findItemHotbar(Items.WATER_BUCKET);
         if (waterSlot == null) return;
 
-        double reach = Math.max(0.5D, 5.0D - mc.player.getEyeHeight() - 0.1D);
-        double fallSpeed = Math.max(0.0D, -mc.player.getDeltaMovement().y);
-        double remaining = getRemainingFallDistance(Math.max(reach, fallSpeed + 1.0D));
-
-        if (Double.isFinite(remaining)) {
-            if (remaining > reach && remaining > fallSpeed) return;
-        } else if (solidCheck.get()) {
-            return;
+        if (solidCheck.get()) {
+            BlockPos playerPos = BlockPos.containing(mc.player.getX(), mc.player.getY(), mc.player.getZ());
+            if (!hasSolidBelow(playerPos)) return;
         }
 
         placeWaterWithRetrieve(waterSlot, true);
@@ -316,20 +301,18 @@ public class NoFall extends ClientModule {
         saveAndSwitch(waterSlot);
         mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
 
-        placedWaterPos = computePlacedWaterPos(placeRotation);
-
-        if (markAttemptedThisFall && placedWaterPos != null) {
+        if (markAttemptedThisFall) {
             attemptedThisFall = true;
         }
 
-        retrievePending = retrieve.get() && placedWaterPos != null;
-        retrieveTriesLeft = retrievePending ? 4 : 0;
-        retrieveWaitTicks = retrievePending ? retrieveDelay.get().intValue() : 0;
+        retrievePending = retrieve.get();
+        retrieveTriesLeft = retrievePending ? 2 : 0;
         retrieveSlot = null;
+        placedWaterPos = computePlacedWaterPos(placeRotation);
     }
 
     private BlockPos computePlacedWaterPos(Rotation placeRotation) {
-        BlockHitResult hit = rayCastBlock(placeRotation, 5.0D);
+        BlockHitResult hit = rayCastBlock(placeRotation, 4.5D);
         if (hit.getType() == HitResult.Type.MISS) return null;
         return hit.getBlockPos().relative(hit.getDirection());
     }
