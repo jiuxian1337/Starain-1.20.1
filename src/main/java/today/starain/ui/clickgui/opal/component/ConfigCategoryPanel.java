@@ -1,5 +1,6 @@
 package today.starain.ui.clickgui.opal.component;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import today.starain.Starain;
 import today.starain.module.Category;
@@ -12,7 +13,6 @@ import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.font.Icon;
 import today.starain.utils.wrapper.Wrapper;
 
-import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -256,7 +256,7 @@ public final class ConfigCategoryPanel extends OpalComponent {
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-            Desktop.getDesktop().open(dir);
+            Util.getPlatform().openFile(dir);
         } catch (Exception e) {
             ChatUtils.addChatMessage("[Config] Failed to open folder: ", String.valueOf(e.getMessage()));
         }
