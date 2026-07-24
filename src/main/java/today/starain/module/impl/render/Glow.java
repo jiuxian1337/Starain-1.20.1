@@ -2,6 +2,13 @@ package today.starain.module.impl.render;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
+import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.entity.player.Player;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.RenderWorldEvent;
@@ -31,6 +38,7 @@ public class Glow extends ClientModule {
     private final BooleanValue antiAliasing = new BooleanValue("Anti-Aliasing", true, this);
     private final BooleanValue players = new BooleanValue("Players", true, this);
     private final BooleanValue items = new BooleanValue("Items", false, this);
+    private final BooleanValue chests = new BooleanValue("Chests", false, this);
     private final BooleanValue self = new BooleanValue("Self", false, this);
 
     public Glow() {
@@ -58,8 +66,29 @@ public class Glow extends ClientModule {
                 }
             }
         }
+        List<BlockEntity> blockTargets = new ArrayList<>();
+        if (chests.get()) {
+            int pcx = mc.player.blockPosition().getX() >> 4;
+            int pcz = mc.player.blockPosition().getZ() >> 4;
+            int r = 8;
+            for (int cx = pcx - r; cx <= pcx + r; cx++) {
+                for (int cz = pcz - r; cz <= pcz + r; cz++) {
+                    LevelChunk chunk = mc.level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
+                    if (chunk == null) continue;
+                    for (BlockEntity be : chunk.getBlockEntities().values()) {
+                        if (be instanceof ChestBlockEntity
+                                || be instanceof EnderChestBlockEntity
+                                || be instanceof ShulkerBoxBlockEntity
+                                || be instanceof BarrelBlockEntity) {
+                            blockTargets.add(be);
+                        }
+                    }
+                }
+            }
+        }
+
         boolean handGlow = self.get() && players.get() && firstPerson;
-        if (targets.isEmpty() && !handGlow) return;
+        if (targets.isEmpty() && blockTargets.isEmpty() && !handGlow) return;
 
         int stops;
         float alpha;
@@ -87,7 +116,7 @@ public class Glow extends ClientModule {
             colors[i * 3 + 2] = stop.getBlue() / 255.0F;
         }
 
-        OutlineGlow.INSTANCE.draw(event.getPoseStack(), event.getPartialTick(), targets,
+        OutlineGlow.INSTANCE.draw(event.getPoseStack(), event.getPartialTick(), targets, blockTargets,
                 colors, stops, alpha, radius.get().floatValue(), strength.get().floatValue(),
                 antiAliasing.get(), handGlow, blend.isMode("Additive"));
     }

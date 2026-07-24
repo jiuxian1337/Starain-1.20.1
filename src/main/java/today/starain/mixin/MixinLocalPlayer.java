@@ -69,11 +69,15 @@ public abstract class MixinLocalPlayer extends AbstractClientPlayer {
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/player/AbstractClientPlayer;tick()V",
                     shift = At.Shift.BEFORE
-            )}
+            )},
+            cancellable = true
     )
     public void injectUpdateEvent(CallbackInfo ci) {
         PlayerTickEvent event = new PlayerTickEvent();
         Starain.getInstance().getEventManager().call(event);
+        if (event.isCancelled()) {
+            ci.cancel();
+        }
     }
 
     /**

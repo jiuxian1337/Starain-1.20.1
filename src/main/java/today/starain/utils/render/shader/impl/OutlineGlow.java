@@ -13,9 +13,11 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.util.Mth;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import today.starain.utils.render.shader.Framebuffer;
@@ -94,10 +96,11 @@ public class OutlineGlow {
     private int height;
 
     public void draw(PoseStack poseStack, float partialTick, List<? extends Entity> targets,
+                     List<? extends BlockEntity> blockTargets,
                      float[] colors, int stops, float alpha, float radius, float strength, boolean antiAliasing,
                      boolean renderHand, boolean additive) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || (targets.isEmpty() && !renderHand)) {
+        if (mc.level == null || (targets.isEmpty() && blockTargets.isEmpty() && !renderHand)) {
             return;
         }
 
@@ -138,6 +141,17 @@ public class OutlineGlow {
                 double dz = Mth.lerp(partialTick, player.zo, player.getZ()) - camera.z;
                 float yaw = Mth.lerp(partialTick, player.yRotO, player.getYRot());
                 dispatcher.render(player, dx, dy, dz, yaw, partialTick, poseStack, maskBuffer, LightTexture.FULL_BRIGHT);
+            } catch (Throwable ignored) {
+            }
+        }
+
+        for (BlockEntity blockEntity : blockTargets) {
+            try {
+                BlockPos pos = blockEntity.getBlockPos();
+                poseStack.pushPose();
+                poseStack.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
+                mc.getBlockEntityRenderDispatcher().render(blockEntity, partialTick, poseStack, maskBuffer);
+                poseStack.popPose();
             } catch (Throwable ignored) {
             }
         }

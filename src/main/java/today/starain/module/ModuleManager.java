@@ -12,16 +12,19 @@ import today.starain.module.impl.combat.KeepSprint;
 import today.starain.module.impl.combat.KillAura;
 import today.starain.module.impl.combat.Velocity;
 import today.starain.module.impl.misc.*;
+import today.starain.module.impl.misc.MiddleClickPearl;
 import today.starain.module.impl.movement.FastWeb;
 import today.starain.module.impl.movement.NoJumpDelay;
 import today.starain.module.impl.movement.NoSlow;
 import today.starain.module.impl.movement.Sprint;
+import today.starain.module.impl.movement.Stuck;
 import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.Animations;
 import today.starain.module.impl.render.FullBright;
 import today.starain.module.impl.render.Glow;
 import today.starain.module.impl.render.ItemPhysics;
 import today.starain.module.impl.render.TargetESP;
+import today.starain.module.impl.render.Trajectories;
 import today.starain.module.impl.render.NameTags;
 import today.starain.module.impl.render.TimeChanger;
 import today.starain.utils.render.BindUtils;
@@ -42,6 +45,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new NameTags());
         modules.add(new Animations());
         modules.add(new TargetESP());
+        modules.add(new Trajectories());
         modules.add(new Glow());
         modules.add(new ItemPhysics());
         modules.add(new ArrayListModule());
@@ -60,6 +64,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new NoJumpDelay());
         modules.add(new NoSlow());
         modules.add(new FastWeb());
+        modules.add(new Stuck());
         modules.add(new AutoTools());
         modules.add(new ChestStealer());
         modules.add(new InvManager());
@@ -67,6 +72,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new NoFall());
         modules.add(new HealthBypass());
         modules.add(new GhostHand());
+        modules.add(new MiddleClickPearl());
         Starain.getInstance().getEventManager().register(this);
     }
 

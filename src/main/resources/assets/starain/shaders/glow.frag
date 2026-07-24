@@ -20,19 +20,24 @@ uniform float uStrength;
 
 void main() {
     float center = texture(uMask, uv).a;
-    float best = 0.0;
+    float bestFilled = 0.0;
+    float bestEmpty = 0.0;
 
     for (int d = 0; d < DIRECTIONS; d++) {
         float a = TAU * float(d) / float(DIRECTIONS);
         vec2 dir = vec2(cos(a), sin(a));
         for (int s = 1; s <= STEPS; s++) {
             float t = float(s) / float(STEPS);
+            float w = 1.0 - t;
             float m = texture(uMask, uv + dir * uTexelSize * uRadius * t).a;
-            best = max(best, m * (1.0 - t));
+            bestFilled = max(bestFilled, m * w);
+            bestEmpty = max(bestEmpty, (1.0 - m) * w);
         }
     }
 
-    float glow = clamp(best * (1.0 - center) * uStrength, 0.0, 1.0);
+    float outer = bestFilled * (1.0 - center);
+    float inner = bestEmpty * center;
+    float glow = clamp((outer + inner) * uStrength, 0.0, 1.0);
     if (glow <= 0.002) discard;
 
     int last = max(uCount - 1, 1);
