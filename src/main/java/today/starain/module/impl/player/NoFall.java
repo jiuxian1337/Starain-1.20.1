@@ -32,10 +32,10 @@ import today.starain.value.impl.NumberValue;
 public class NoFall extends ClientModule {
     private final ModeValue mode = new ModeValue("Mode", "WaterBucket", new String[]{"WaterBucket", "Grim"}, this);
     private final NumberValue fallDistance = new NumberValue("FallDistance", 3.0, 15.0, 3.0, 0.1, this);
-    private final NumberValue rotateSpeed = new NumberValue("Rotation Speed", 1.0, 180.0, 180.0, 1.0, this, () -> mode.isMode("WaterBucket"));
-    private final BooleanValue solidCheck = new BooleanValue("SolidCheck", true, this, () -> mode.isMode("WaterBucket"));
-    private final BooleanValue retrieve = new BooleanValue("Retrieve", true, this, () -> mode.isMode("WaterBucket"));
-    private final BooleanValue antiFire = new BooleanValue("AntiFire", true, this, () -> mode.isMode("WaterBucket"));
+    private final NumberValue rotateSpeed = new NumberValue("Rotation Speed", 1.0, 180.0, 180.0, 1.0, this);
+    private final BooleanValue solidCheck = new BooleanValue("SolidCheck", true, this);
+    private final BooleanValue retrieve = new BooleanValue("Retrieve", true, this);
+    private final BooleanValue antiFire = new BooleanValue("AntiFire", true, this);
 
     // ---- Grim 模式状态 ----
     private float grimLastFallDistance;
@@ -92,7 +92,6 @@ public class NoFall extends ClientModule {
     public void onTick(GameTickEvent event) {
         if (event.getType() != EventType.PRE) return;
         if (mc.player == null || mc.level == null) return;
-        if (!mode.isMode("WaterBucket")) return;
         if (mc.player.isFallFlying()) return;
 
         if (postRetrievePauseTicks > 0) {
@@ -159,7 +158,6 @@ public class NoFall extends ClientModule {
             return;
         }
 
-        // 顺手把脚边残留的水源收进空桶（避免留下水痕）。
         if (!attemptedThisFall
                 && !retrievePending
                 && placedWaterPos == null
@@ -203,7 +201,8 @@ public class NoFall extends ClientModule {
             }
         }
 
-        // 临落地补刀：还剩极短距离时多跳一两 tick（skipTicks），把摔伤兜底吃掉。
+        if (!mode.isMode("WaterBucket")) return;
+
         if (attemptedThisFall && !lastChanceSkipApplied && mc.player.getDeltaMovement().y < 0.0D) {
             double remaining = getRemainingFallDistance(2.5D);
             if (remaining > 0.0D && remaining <= 1.05D) {

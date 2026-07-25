@@ -7,6 +7,7 @@ import today.starain.event.impl.KeyboardEvent;
 import today.starain.event.impl.MouseButtonEvent;
 import today.starain.module.impl.client.*;
 import today.starain.module.impl.combat.AutoHeal;
+import today.starain.module.impl.combat.AutoThrow;
 import today.starain.module.impl.combat.Criticals;
 import today.starain.module.impl.combat.KeepSprint;
 import today.starain.module.impl.combat.KillAura;
@@ -56,6 +57,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new Criticals());
         modules.add(new KillAura());
         modules.add(new AutoHeal());
+        modules.add(new AutoThrow());
         modules.add(new KeepSprint());
         modules.add(new Velocity());
         modules.add(new AntiBot());

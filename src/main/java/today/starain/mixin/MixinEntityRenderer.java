@@ -16,6 +16,7 @@ import today.starain.module.impl.render.NameTags;
 
 @Mixin(EntityRenderer.class)
 public class MixinEntityRenderer {
+
     @Inject(method = "renderNameTag", at = @At("HEAD"), cancellable = true)
     private void starain$hideVanillaName(Entity entity, Component displayName, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
         // 只隐藏 NameTags 会自绘的对象（非自己的玩家）的原版头顶名，避免和自绘名牌重叠。
