@@ -13,6 +13,7 @@ import today.starain.module.impl.combat.KillAura;
 import today.starain.module.impl.combat.Velocity;
 import today.starain.module.impl.misc.*;
 import today.starain.module.impl.misc.MiddleClickPearl;
+import today.starain.module.impl.misc.TitleReplace;
 import today.starain.module.impl.movement.FastWeb;
 import today.starain.module.impl.movement.NoJumpDelay;
 import today.starain.module.impl.movement.NoSlow;
@@ -73,6 +74,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new HealthBypass());
         modules.add(new GhostHand());
         modules.add(new MiddleClickPearl());
+        modules.add(new TitleReplace());
         Starain.getInstance().getEventManager().register(this);
     }
 
