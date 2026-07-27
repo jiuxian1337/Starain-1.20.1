@@ -101,8 +101,9 @@ public final class ModulePanel extends OpalComponent {
     private void drawBackground(float toggle, float hover) {
         int base = OpalDraw.opacity(OpalTheme.ROW_BG, OpalTheme.rowBgOpacity());
         // Mode-aware accent flowing diagonally from top-left toward bottom-left (Solid / Gradient / Rainbow).
-        int phaseTop = (int) (-(x + y) * OpalTheme.ACCENT_RATE);
-        int phaseBottom = (int) (-(x + y + height) * OpalTheme.ACCENT_RATE);
+        double phaseX = -x * OpalTheme.ACCENT_RATE_X;
+        double phaseTop = phaseX - y * OpalTheme.ACCENT_RATE;
+        double phaseBottom = phaseX - (y + height) * OpalTheme.ACCENT_RATE;
         int accent1 = OpalDraw.opacity(OpalTheme.accent(phaseTop), toggle);
         int accent2 = OpalDraw.opacity(OpalTheme.accent(phaseBottom), toggle);
         int hoverOverlay = OpalDraw.opacity(OpalTheme.TEXT, hover);

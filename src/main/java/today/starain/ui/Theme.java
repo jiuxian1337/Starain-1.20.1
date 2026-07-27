@@ -40,6 +40,10 @@ public final class Theme {
     }
 
     public static Color accent(int index) {
+        return accent((double) index);
+    }
+
+    public static Color accent(double index) {
         HUD hud = hud();
         if (hud == null) {
             return DEFAULT_PRIMARY;

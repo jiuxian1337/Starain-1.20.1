@@ -79,7 +79,8 @@ public final class ConfigCategoryPanel extends OpalComponent {
                 boolean hov = isHovering(x, rowY, width, height, mouseX, mouseY);
                 if (sel) {
                     OpalDraw.gradientRect(x, rowY, width, height,
-                            OpalDraw.opacity(OpalTheme.accent(i), OpalTheme.toggleTint()), OpalDraw.opacity(OpalTheme.accent(i + 1), OpalTheme.toggleTint()), 0);
+                            OpalDraw.opacity(OpalTheme.accent(-x * OpalTheme.ACCENT_RATE_X - rowY * OpalTheme.ACCENT_RATE), OpalTheme.toggleTint()),
+                            OpalDraw.opacity(OpalTheme.accent(-x * OpalTheme.ACCENT_RATE_X - (rowY + height) * OpalTheme.ACCENT_RATE), OpalTheme.toggleTint()), 0);
                 } else if (hov) {
                     Skia.drawRect(x, rowY, width, height, OpalDraw.opacity(OpalTheme.TEXT, OpalTheme.hoverOpacity()));
                 }

@@ -219,20 +219,29 @@ public class ColorUtil {
     }
 
     public static Color rainbow(int speed, int index, float saturation, float brightness, float opacity) {
+        return rainbow(speed, (double) index, saturation, brightness, opacity);
+    }
+
+    public static Color rainbow(int speed, double index, float saturation, float brightness, float opacity) {
         int step = Math.max(1, speed);
-        float angle = ((System.currentTimeMillis() % (360L * step)) / (float) step + index) % 360.0f;
-        if (angle < 0.0f) angle += 360.0f;
-        float hue = angle / 360f;
+        double angle = ((System.currentTimeMillis() % (360L * step)) / (double) step + index) % 360.0;
+        if (angle < 0.0) angle += 360.0;
+        float hue = (float) (angle / 360.0);
         Color color = new Color(Color.HSBtoRGB(hue, saturation, brightness));
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.max(0, Math.min(255, (int) (opacity * 255))));
     }
 
     public static Color interpolateColorsBackAndForth(int speed, int index, Color start, Color end, boolean trueColor) {
+        return interpolateColorsBackAndForth(speed, (double) index, start, end, trueColor);
+    }
+
+    public static Color interpolateColorsBackAndForth(int speed, double index, Color start, Color end, boolean trueColor) {
         int step = Math.max(1, speed);
-        float angle = ((System.currentTimeMillis() % (360L * step)) / (float) step + index) % 360.0f;
-        if (angle < 0.0f) angle += 360.0f;
-        angle = (angle >= 180.0f ? 360.0f - angle : angle) * 2.0f;
-        return trueColor ? ColorUtil.interpolateColorHue(start, end, angle / 360f) : ColorUtil.interpolateColorC(start, end, angle / 360f);
+        double angle = ((System.currentTimeMillis() % (360L * step)) / (double) step + index) % 360.0;
+        if (angle < 0.0) angle += 360.0;
+        angle = (angle >= 180.0 ? 360.0 - angle : angle) * 2.0;
+        float amount = (float) (angle / 360.0);
+        return trueColor ? ColorUtil.interpolateColorHue(start, end, amount) : ColorUtil.interpolateColorC(start, end, amount);
     }
 
     //The next few methods are for interpolating colors
