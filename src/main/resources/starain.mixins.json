@@ -32,6 +32,7 @@
                    "MixinWindow",
                    "MixinJoinMultiplayerScreen",
                    "MixinScreenKeyForJoin",
+                   "MixinRenderSystem",
                    "MixinScreenJoiningOverlay"
                ],
     "injectors":  {

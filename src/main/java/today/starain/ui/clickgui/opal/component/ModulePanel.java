@@ -101,9 +101,8 @@ public final class ModulePanel extends OpalComponent {
     private void drawBackground(float toggle, float hover) {
         int base = OpalDraw.opacity(OpalTheme.ROW_BG, OpalTheme.rowBgOpacity());
         // Mode-aware accent flowing diagonally from top-left toward bottom-left (Solid / Gradient / Rainbow).
-        double phaseX = -x * OpalTheme.ACCENT_RATE_X;
-        double phaseTop = phaseX - y * OpalTheme.ACCENT_RATE;
-        double phaseBottom = phaseX - (y + height) * OpalTheme.ACCENT_RATE;
+        double phaseTop = -(x + y) * OpalTheme.accentRate();
+        double phaseBottom = -(x + y + height) * OpalTheme.accentRate();
         int accent1 = OpalDraw.opacity(OpalTheme.accent(phaseTop), toggle);
         int accent2 = OpalDraw.opacity(OpalTheme.accent(phaseBottom), toggle);
         int hoverOverlay = OpalDraw.opacity(OpalTheme.TEXT, hover);
@@ -113,14 +112,14 @@ public final class ModulePanel extends OpalComponent {
         if (!lastModule) {
             Skia.drawGuiBlur(x, y, width, height);
             Skia.drawRect(x, y, width, height, base);
-            OpalDraw.gradientRect(x, y, width, height, accent1, accent2, 0);
+            OpalDraw.gradientRect(x, y, width, height, accent1, accent2, 90);
             if (showHover) {
                 Skia.drawRect(x, y, width, height, hoverOverlay);
             }
         } else {
             Skia.drawGuiRoundedBlur(x, y, width, height, r);
             Skia.drawRoundedRectVarying(x, y, width, height, 0, 0, r, r, OpalDraw.color(base));
-            OpalDraw.gradientRoundedRectVarying(x, y, width, height, 0, 0, r, r, accent1, accent2, 0);
+            OpalDraw.gradientRoundedRectVarying(x, y, width, height, 0, 0, r, r, accent1, accent2, 90);
             if (showHover) {
                 Skia.drawRoundedRectVarying(x, y, width, height, 0, 0, r, r, OpalDraw.color(hoverOverlay));
             }

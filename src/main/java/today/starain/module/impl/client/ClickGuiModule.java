@@ -32,6 +32,9 @@ public final class ClickGuiModule extends ClientModule {
 
     private final BooleanValue syncColor = new BooleanValue("Sync Color", true, this);
     private final ColorValue accentColor = new ColorValue("Accent Color", new Color(91, 207, 250), this, () -> !syncColor.get());
+    private final BooleanValue customFlow = new BooleanValue("Custom Flow", false, this, syncColor::get);
+    private final NumberValue flowSpeed = new NumberValue("Flow Speed", 1, 50, 25, 1, this, () -> syncColor.get() && customFlow.get());
+    private final NumberValue flowDensity = new NumberValue("Flow Density", 1, 100, 10, 1, this, () -> syncColor.get() && customFlow.get());
 
     private final NumberValue guiX = new NumberValue("GUI X", -5000.0, 10000.0, 50.0, 1.0, this, () -> false);
     private final NumberValue guiY = new NumberValue("GUI Y", -5000.0, 10000.0, 50.0, 1.0, this, () -> false);
@@ -107,6 +110,21 @@ public final class ClickGuiModule extends ClientModule {
     public static Color guiAccentColor() {
         ClickGuiModule m = get();
         return m != null ? m.accentColor.get() : new Color(91, 207, 250);
+    }
+
+    public static boolean guiCustomFlow() {
+        ClickGuiModule m = get();
+        return m != null && m.customFlow.get();
+    }
+
+    public static int guiFlowSpeed() {
+        ClickGuiModule m = get();
+        return m != null ? m.flowSpeed.get().intValue() : 25;
+    }
+
+    public static float guiFlowRate() {
+        ClickGuiModule m = get();
+        return m != null ? m.flowDensity.get().floatValue() / 100.0F : 0.1F;
     }
 
     public static boolean guiAnimations() {

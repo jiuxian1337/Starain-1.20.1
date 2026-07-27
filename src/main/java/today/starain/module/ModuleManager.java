@@ -29,6 +29,7 @@ import today.starain.module.impl.render.TargetESP;
 import today.starain.module.impl.render.Trajectories;
 import today.starain.module.impl.render.NameTags;
 import today.starain.module.impl.render.TimeChanger;
+import today.starain.module.impl.render.WorldColor;
 import today.starain.utils.render.BindUtils;
 import today.starain.utils.wrapper.Wrapper;
 
@@ -44,6 +45,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new Sprint());
         modules.add(new FullBright());
         modules.add(new TimeChanger());
+        modules.add(new WorldColor());
         modules.add(new NameTags());
         modules.add(new Animations());
         modules.add(new TargetESP());

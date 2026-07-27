@@ -44,16 +44,21 @@ public final class Theme {
     }
 
     public static Color accent(double index) {
+        return accent(index, 0);
+    }
+
+    public static Color accent(double index, int speedOverride) {
         HUD hud = hud();
         if (hud == null) {
             return DEFAULT_PRIMARY;
         }
         int spread = hud.getThemeSpread();
+        int speed = speedOverride > 0 ? speedOverride : hud.getThemeSpeed();
         return switch (hud.getThemeMode()) {
             case "Solid" -> hud.getThemePrimary();
-            case "Rainbow" -> ColorUtil.rainbow(hud.getThemeSpeed(), index * spread, 1.0F, 1.0F, 1.0F);
+            case "Rainbow" -> ColorUtil.rainbow(speed, index * spread, 1.0F, 1.0F, 1.0F);
             default -> ColorUtil.interpolateColorsBackAndForth(
-                    hud.getThemeSpeed(), index * spread, hud.getThemePrimary(), hud.getThemeSecondary(), true);
+                    speed, index * spread, hud.getThemePrimary(), hud.getThemeSecondary(), true);
         };
     }
 

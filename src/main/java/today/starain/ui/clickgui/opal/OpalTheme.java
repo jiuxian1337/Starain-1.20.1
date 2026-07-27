@@ -94,7 +94,10 @@ public final class OpalTheme {
     }
 
     public static final float ACCENT_RATE = 0.1F;
-    public static final float ACCENT_RATE_X = 0.018F;
+
+    public static float accentRate() {
+        return ClickGuiModule.guiCustomFlow() ? ClickGuiModule.guiFlowRate() : ACCENT_RATE;
+    }
 
     public static int accent(int index) {
         return accent((double) index);
@@ -104,6 +107,6 @@ public final class OpalTheme {
         if (!ClickGuiModule.guiSyncColor()) {
             return ClickGuiModule.guiAccentColor().getRGB();
         }
-        return Theme.accent(index).getRGB();
+        return Theme.accent(index, ClickGuiModule.guiCustomFlow() ? ClickGuiModule.guiFlowSpeed() : 0).getRGB();
     }
 }
