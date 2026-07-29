@@ -31,8 +31,6 @@ public class Glow extends ClientModule {
 
     private static final int MAX_STOPS = 128;
 
-    private final List<BlockEntity> chestCache = new ArrayList<>();
-    private int chestCacheAge;
 
     private final BooleanValue syncColor = new BooleanValue("Sync Color", true, this);
     private final ColorValue color = new ColorValue("Color", new Color(0, 186, 255), this, () -> !syncColor.get());
@@ -51,13 +49,6 @@ public class Glow extends ClientModule {
     public Glow() {
         setName("Glow");
         setCategory(Category.RENDER);
-    }
-
-    @Override
-    protected void onDisable() {
-        chestCache.clear();
-        chestCacheAge = 0;
-        hudRects.clear();
     }
 
     @EventTarget
@@ -91,17 +82,23 @@ public class Glow extends ClientModule {
         }
         List<BlockEntity> blockTargets = new ArrayList<>();
         if (chests.get()) {
-            if (--chestCacheAge <= 0) {
-                chestCacheAge = 10;
-                rebuildChestCache();
-            }
-            for (BlockEntity be : chestCache) {
-                if (!be.isRemoved()) {
-                    blockTargets.add(be);
+            int pcx = mc.player.blockPosition().getX() >> 4;
+            int pcz = mc.player.blockPosition().getZ() >> 4;
+            int r = 8;
+            for (int cx = pcx - r; cx <= pcx + r; cx++) {
+                for (int cz = pcz - r; cz <= pcz + r; cz++) {
+                    LevelChunk chunk = mc.level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
+                    if (chunk == null) continue;
+                    for (BlockEntity be : chunk.getBlockEntities().values()) {
+                        if (be instanceof ChestBlockEntity
+                                || be instanceof EnderChestBlockEntity
+                                || be instanceof ShulkerBoxBlockEntity
+                                || be instanceof BarrelBlockEntity) {
+                            blockTargets.add(be);
+                        }
+                    }
                 }
             }
-        } else if (!chestCache.isEmpty()) {
-            chestCache.clear();
         }
 
         boolean handGlow = self.get() && firstPerson && (useTarget.get() || players.get());
@@ -145,27 +142,6 @@ public class Glow extends ClientModule {
         OutlineGlow.INSTANCE.drawRects(rects, palette.colors(), palette.stops(), palette.alpha(),
                 module.radius.get().floatValue(), module.strength.get().floatValue(),
                 module.antiAliasing.get(), module.blend.isMode("Additive"), module.innerGlow.get());
-    }
-
-    private void rebuildChestCache() {
-        chestCache.clear();
-        int pcx = mc.player.blockPosition().getX() >> 4;
-        int pcz = mc.player.blockPosition().getZ() >> 4;
-        int r = 8;
-        for (int cx = pcx - r; cx <= pcx + r; cx++) {
-            for (int cz = pcz - r; cz <= pcz + r; cz++) {
-                LevelChunk chunk = mc.level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
-                if (chunk == null) continue;
-                for (BlockEntity be : chunk.getBlockEntities().values()) {
-                    if (be instanceof ChestBlockEntity
-                            || be instanceof EnderChestBlockEntity
-                            || be instanceof ShulkerBoxBlockEntity
-                            || be instanceof BarrelBlockEntity) {
-                        chestCache.add(be);
-                    }
-                }
-            }
-        }
     }
 
     private Palette buildPalette() {

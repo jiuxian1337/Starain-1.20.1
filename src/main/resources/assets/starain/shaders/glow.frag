@@ -24,7 +24,7 @@ float hash(vec2 p) {
 }
 
 void main() {
-    float center = textureLod(uMask, uv, 0.0).a;
+    float center = texture(uMask, uv).a;
     float jitter = hash(uv);
 
     float sumOuter = 0.0;
@@ -37,7 +37,7 @@ void main() {
         for (int s = 0; s < STEPS; s++) {
             float t = (float(s) + jitter) / float(STEPS);
             float w = exp(-t * t * 2.2) * t;
-            float m = textureLod(uMask, uv + dir * t, 0.0).a;
+            float m = texture(uMask, uv + dir * t).a;
             sumOuter += m * w;
             sumInner += (1.0 - m) * w;
             sumWeight += w;

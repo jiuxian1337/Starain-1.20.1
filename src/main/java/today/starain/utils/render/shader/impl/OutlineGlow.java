@@ -22,10 +22,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import today.starain.utils.render.ProjectionUtils;
-import today.starain.utils.vector.Vector2f;
 import org.joml.Matrix4f;
 import today.starain.utils.render.shader.Framebuffer;
 import today.starain.utils.render.shader.PostProcessRenderer;
@@ -96,8 +93,6 @@ public class OutlineGlow {
         poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(phase * (float) Math.PI) * amount * 3.0F));
         poseStack.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(phase * (float) Math.PI - 0.2F) * amount) * 5.0F));
     }
-
-    private static final int[] EMPTY_SCISSOR = new int[]{0, 0, 0, 0};
 
     private Shader shader;
     private Shader maskShader;
@@ -185,8 +180,7 @@ public class OutlineGlow {
             RenderSystem.setProjectionMatrix(oldProjection, oldSorting);
         }
 
-        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow,
-                computeScissor(mc, targets, blockTargets, partialTick, radius, renderHand));
+        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow);
     }
 
     public void drawRects(List<float[]> rects, float[] colors, int stops, float alpha,
@@ -236,93 +230,7 @@ public class OutlineGlow {
         BufferUploader.reset();
         ShaderHelper.useProgram(0);
 
-        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow,
-                rectScissor(mc, rects, radius));
-    }
-
-    private int[] rectScissor(Minecraft mc, List<float[]> rects, float radius) {
-        double scale = mc.getWindow().getGuiScale();
-        float minX = Float.MAX_VALUE;
-        float minY = Float.MAX_VALUE;
-        float maxX = -Float.MAX_VALUE;
-        float maxY = -Float.MAX_VALUE;
-        for (float[] r : rects) {
-            minX = Math.min(minX, r[0]);
-            minY = Math.min(minY, r[1]);
-            maxX = Math.max(maxX, r[0] + r[2]);
-            maxY = Math.max(maxY, r[1] + r[3]);
-        }
-        return toScissor(mc, (float) (minX * scale), (float) (minY * scale),
-                (float) (maxX * scale), (float) (maxY * scale), radius);
-    }
-
-    private int[] computeScissor(Minecraft mc, List<? extends Entity> targets,
-                                 List<? extends BlockEntity> blockTargets,
-                                 float partialTick, float radius, boolean renderHand) {
-        if (renderHand) {
-            return null;
-        }
-        double scale = mc.getWindow().getGuiScale();
-        float[] bounds = {Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
-        for (Entity entity : targets) {
-            if (!accumulate(entity.getBoundingBox().inflate(0.6), partialTick, bounds)) {
-                return null;
-            }
-        }
-        for (BlockEntity blockEntity : blockTargets) {
-            BlockPos pos = blockEntity.getBlockPos();
-            if (!accumulate(new AABB(pos).inflate(0.2), partialTick, bounds)) {
-                return null;
-            }
-        }
-        if (bounds[0] > bounds[2]) {
-            return null;
-        }
-        return toScissor(mc, (float) (bounds[0] * scale), (float) (bounds[1] * scale),
-                (float) (bounds[2] * scale), (float) (bounds[3] * scale), radius);
-    }
-
-    private boolean accumulate(AABB box, float partialTick, float[] bounds) {
-        for (int i = 0; i < 8; i++) {
-            double px = (i & 1) == 0 ? box.minX : box.maxX;
-            double py = (i & 2) == 0 ? box.minY : box.maxY;
-            double pz = (i & 4) == 0 ? box.minZ : box.maxZ;
-            Vector2f p = ProjectionUtils.project(px, py, pz, partialTick);
-            if (p.x == Float.MAX_VALUE || !Float.isFinite(p.x) || !Float.isFinite(p.y)) {
-                return false;
-            }
-            bounds[0] = Math.min(bounds[0], p.x);
-            bounds[1] = Math.min(bounds[1], p.y);
-            bounds[2] = Math.max(bounds[2], p.x);
-            bounds[3] = Math.max(bounds[3], p.y);
-        }
-        return true;
-    }
-
-    private int[] toScissor(Minecraft mc, float minX, float minY, float maxX, float maxY, float radius) {
-        if (minX > maxX || minY > maxY) {
-            return null;
-        }
-        int winW = mc.getWindow().getWidth();
-        int winH = mc.getWindow().getHeight();
-        float pad = radius * 2.0F + 8.0F;
-        int x0 = (int) Math.floor(minX - pad);
-        int y0 = (int) Math.floor(minY - pad);
-        int x1 = (int) Math.ceil(maxX + pad);
-        int y1 = (int) Math.ceil(maxY + pad);
-        x0 = Math.max(0, Math.min(winW, x0));
-        x1 = Math.max(0, Math.min(winW, x1));
-        y0 = Math.max(0, Math.min(winH, y0));
-        y1 = Math.max(0, Math.min(winH, y1));
-        int w = x1 - x0;
-        int h = y1 - y0;
-        if (w <= 0 || h <= 0) {
-            return EMPTY_SCISSOR;
-        }
-        if (w >= winW && h >= winH) {
-            return null;
-        }
-        return new int[]{x0, winH - y1, w, h};
+        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow);
     }
 
     private void prepareFbo(Minecraft mc, boolean antiAliasing) {
@@ -340,12 +248,7 @@ public class OutlineGlow {
     }
 
     private void applyGlowPass(Minecraft mc, float[] colors, int stops, float alpha,
-                               float radius, float strength, boolean additive, boolean innerGlow,
-                               int[] scissor) {
-        if (scissor != null && (scissor[2] <= 0 || scissor[3] <= 0)) {
-            mc.getMainRenderTarget().bindWrite(true);
-            return;
-        }
+                               float radius, float strength, boolean additive, boolean innerGlow) {
         mc.getMainRenderTarget().bindWrite(true);
 
         shader.bind();
@@ -364,15 +267,9 @@ public class OutlineGlow {
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
 
-        if (scissor != null) {
-            RenderSystem.enableScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
-        }
         PostProcessRenderer.beginRender();
         PostProcessRenderer.render();
         PostProcessRenderer.endRender();
-        if (scissor != null) {
-            RenderSystem.disableScissor();
-        }
 
         BufferUploader.reset();
         ShaderHelper.useProgram(0);
