@@ -30,6 +30,7 @@ public class TargetHUD extends ClientModule {
     private final NumberValue x = new NumberValue("X", 0, 1000, 300, 1, this);
     private final NumberValue y = new NumberValue("y", 0, 1000, 300, 1, this);
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
+    private final BooleanValue glow = new BooleanValue("Glow", false, this);
     private final SmoothAnimationTimer heal = new SmoothAnimationTimer(20.0F);
     private final SmoothAnimationTimer alpha = new SmoothAnimationTimer(255.0F);
     private final SmoothAnimationTimer hurtAlpha = new SmoothAnimationTimer(0.0F);
@@ -61,6 +62,10 @@ public class TargetHUD extends ClientModule {
         float nameWidth = Skia.getTextWidth(name, miSans);
         float healBarWidth = (nameWidth + 45.0f > width) ? nameWidth : 78.0f;
         if (nameWidth + 45.0f > width) width = nameWidth + 45.0f;
+
+        if (glow.get()) {
+            today.starain.module.impl.render.Glow.queueHud(x, y, width, height, 6.0f, alpha.value / 255.0f);
+        }
 
         try (Paint layerPaint = new Paint()) {
             layerPaint.setAlpha((int) alpha.value);

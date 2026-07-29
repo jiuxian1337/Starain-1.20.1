@@ -85,6 +85,12 @@ public class Skia implements Wrapper {
         drawBlurClipped(() -> getCanvas().clipRRect(RRect.makeXYWH(x, y, width, height, radius), ClipMode.INTERSECT, true));
     }
 
+    public static void drawGuiRoundedBlurVarying(float x, float y, float width, float height, float topLeft,
+                                                 float topRight, float bottomRight, float bottomLeft) {
+        float[] corners = {topLeft, topLeft, topRight, topRight, bottomRight, bottomRight, bottomLeft, bottomLeft};
+        drawBlurClipped(() -> getCanvas().clipRRect(RRect.makeComplexXYWH(x, y, width, height, corners), ClipMode.INTERSECT, true));
+    }
+
     /**
      * 把 KawaseBlur 那张全屏纹理贴回来，只留裁剪区。纹理是屏幕空间的，
      * 而画布此刻带着缩放/平移，所以要用当前矩阵反推纹理该画在哪、多大。

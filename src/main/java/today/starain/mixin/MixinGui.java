@@ -37,6 +37,7 @@ public class MixinGui {
             if (HUD.isBlurEnabled()) {
                 KawaseBlur.INSTANCE.draw(HUD.getBlurRadius(), HUD.getBlurIterations());
             }
+            today.starain.module.impl.render.Glow.flushHud();
             SkiaContext.draw((context) -> {
                 Skia.save();
                 Skia.scale((float) Minecraft.getInstance().getWindow().getGuiScale());

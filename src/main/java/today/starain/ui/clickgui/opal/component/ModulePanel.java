@@ -117,7 +117,7 @@ public final class ModulePanel extends OpalComponent {
                 Skia.drawRect(x, y, width, height, hoverOverlay);
             }
         } else {
-            Skia.drawGuiRoundedBlur(x, y, width, height, r);
+            Skia.drawGuiRoundedBlurVarying(x, y, width, height, 0, 0, r, r);
             Skia.drawRoundedRectVarying(x, y, width, height, 0, 0, r, r, OpalDraw.color(base));
             OpalDraw.gradientRoundedRectVarying(x, y, width, height, 0, 0, r, r, accent1, accent2, 90);
             if (showHover) {

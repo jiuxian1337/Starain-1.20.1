@@ -32,7 +32,8 @@
                    "MixinWindow",
                    "MixinJoinMultiplayerScreen",
                    "MixinScreenKeyForJoin",
-                   "MixinScreenJoiningOverlay"
+                   "MixinScreenJoiningOverlay",
+                   "MixinShaderInstance"
                ],
     "injectors":  {
                       "defaultRequire":  1
