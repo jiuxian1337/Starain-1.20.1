@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import org.joml.Vector3f;
@@ -145,6 +146,10 @@ public class ESP2D extends ClientModule {
         if (!(livingRenderer.getModel() instanceof HumanoidModel<?> raw)) {
             return;
         }
+        if (living.deathTime > 0 || living.isAutoSpinAttack() || living.isFallFlying()
+                || living.hasPose(Pose.SLEEPING) || living.getSwimAmount(partialTick) > 0.0F) {
+            return;
+        }
         HumanoidModel<LivingEntity> model = (HumanoidModel<LivingEntity>) raw;
 
         float bodyRot = Mth.rotLerp(partialTick, living.yBodyRotO, living.yBodyRot);
@@ -165,20 +170,21 @@ public class ESP2D extends ClientModule {
         double ex = Mth.lerp(partialTick, entity.xo, entity.getX());
         double ey = Mth.lerp(partialTick, entity.yo, entity.getY());
         double ez = Mth.lerp(partialTick, entity.zo, entity.getZ());
-        double[] origin = {cos, sin, ex, ey, ez};
+        double modelScale = living instanceof Player ? 0.9375D : 1.0D;
+        double[] origin = {cos, sin, ex, ey, ez, modelScale};
         Color tint = accent(0.0F);
 
         Vector2f neck = pivot(model.body, origin, partialTick);
-        Vector2f headTop = extend(model.head, -6.5F, origin, partialTick);
-        Vector2f hip = extend(model.body, 11.5F, origin, partialTick);
+        Vector2f headTop = extend(model.head, -7.5F, origin, partialTick);
+        Vector2f hip = extend(model.body, 12.0F, origin, partialTick);
         Vector2f rightShoulder = pivot(model.rightArm, origin, partialTick);
         Vector2f leftShoulder = pivot(model.leftArm, origin, partialTick);
-        Vector2f rightHand = extend(model.rightArm, 9.0F, origin, partialTick);
-        Vector2f leftHand = extend(model.leftArm, 9.0F, origin, partialTick);
+        Vector2f rightHand = extend(model.rightArm, 9.5F, origin, partialTick);
+        Vector2f leftHand = extend(model.leftArm, 9.5F, origin, partialTick);
         Vector2f rightHip = pivot(model.rightLeg, origin, partialTick);
         Vector2f leftHip = pivot(model.leftLeg, origin, partialTick);
-        Vector2f rightFoot = extend(model.rightLeg, 11.0F, origin, partialTick);
-        Vector2f leftFoot = extend(model.leftLeg, 11.0F, origin, partialTick);
+        Vector2f rightFoot = extend(model.rightLeg, 11.5F, origin, partialTick);
+        Vector2f leftFoot = extend(model.leftLeg, 11.5F, origin, partialTick);
 
         bone(neck, headTop, width, tint);
         bone(neck, hip, width, tint);
@@ -210,9 +216,10 @@ public class ESP2D extends ClientModule {
     }
 
     private Vector2f modelToScreen(double mx, double my, double mz, double[] origin, float partialTick) {
-        double lx = -mx / 16.0D;
-        double ly = 1.501D - my / 16.0D;
-        double lz = mz / 16.0D;
+        double scale = origin[5];
+        double lx = -scale * mx / 16.0D;
+        double ly = scale * (1.501D - my / 16.0D);
+        double lz = scale * mz / 16.0D;
         double cos = origin[0];
         double sin = origin[1];
         double wx = origin[2] + lx * cos + lz * sin;
