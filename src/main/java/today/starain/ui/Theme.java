@@ -58,7 +58,7 @@ public final class Theme {
             case "Solid" -> hud.getThemePrimary();
             case "Rainbow" -> ColorUtil.rainbow(speed, index * spread, 1.0F, 1.0F, 1.0F);
             default -> ColorUtil.interpolateColorsBackAndForth(
-                    speed, index * spread, hud.getThemePrimary(), hud.getThemeSecondary(), true);
+                    speed, index * spread, hud.getThemePrimary(), hud.getThemeSecondary(), hud.isThemeTrueColor());
         };
     }
 

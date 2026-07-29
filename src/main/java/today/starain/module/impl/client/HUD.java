@@ -23,7 +23,8 @@ public class HUD extends ClientModule {
 
     private final ModeValue themeMode = new ModeValue("Theme Mode", "Gradient", new String[]{"Solid", "Gradient", "Rainbow"}, this);
     private final ColorValue themePrimary = new ColorValue("Theme Primary", new Color(91, 207, 250), this);
-    private final ColorValue themeSecondary = new ColorValue("Theme Secondary", new Color(245, 171, 185), this, () -> !themeMode.isMode("Solid"));
+    private final ColorValue themeSecondary = new ColorValue("Theme Secondary", new Color(245, 171, 185), this, () -> themeMode.isMode("Gradient"));
+    private final BooleanValue trueColor = new BooleanValue("True Color", true, this, () -> themeMode.isMode("Gradient"));
     private final NumberValue themeSpeed = new NumberValue("Theme Speed", 1F, 50F, 25F, 1F, this, () -> !themeMode.isMode("Solid"));
     private final NumberValue themeSpread = new NumberValue("Theme Spread", 0F, 50F, 5F, 1F, this, () -> !themeMode.isMode("Solid"));
 
@@ -80,6 +81,10 @@ public class HUD extends ClientModule {
 
     public Color getThemePrimary() {
         return themePrimary.get();
+    }
+
+    public boolean isThemeTrueColor() {
+        return trueColor.get();
     }
 
     public Color getThemeSecondary() {
