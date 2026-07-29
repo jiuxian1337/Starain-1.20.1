@@ -23,6 +23,7 @@ import today.starain.module.impl.movement.Stuck;
 import today.starain.module.impl.player.*;
 import today.starain.module.impl.render.Animations;
 import today.starain.module.impl.render.FullBright;
+import today.starain.module.impl.render.ESP2D;
 import today.starain.module.impl.render.Glow;
 import today.starain.module.impl.render.ItemPhysics;
 import today.starain.module.impl.render.TargetESP;
@@ -51,6 +52,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new TargetESP());
         modules.add(new Trajectories());
         modules.add(new Glow());
+        modules.add(new ESP2D());
         modules.add(new ItemPhysics());
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());

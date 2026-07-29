@@ -22,6 +22,7 @@ public final class ArrayListModule extends ClientModule {
     private final NumberValue x = new NumberValue("X", 0, 1000, 10, 1, this);
     private final NumberValue y = new NumberValue("y", 0, 1000, 30, 1, this);
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
+    private final BooleanValue background = new BooleanValue("Background", true, this);
     private final BooleanValue glow = new BooleanValue("Glow", false, this);
     private final BooleanValue hideRenderModule = new BooleanValue("Hide Render Module", true, this);
 
@@ -48,11 +49,13 @@ public final class ArrayListModule extends ClientModule {
                 float height = 2.5f + 7.5f + 2.5f;
                 float x = guiScaledWidth - this.x.get().floatValue() - width * ((module.progress.value - 50f) / 50f);
                 if (glow.get()) {
-                    today.starain.module.impl.render.Glow.queueHud(x, startY, width, height, 0, module.progress.value / 100.0f);
+                    today.starain.module.impl.render.Glow.queueHud(x, startY - 0.5F, width, height + 1.0F, 0, module.progress.value / 100.0f);
                 }
-                Skia.drawShadow(x, startY, width, height, 0);
-                Skia.drawBlur(x, startY, width, height, 0);
-                Skia.drawRoundedRect(x, startY, width, height, 0, Design.BACKGROUND_COLOR);
+                if (background.get()) {
+                    Skia.drawShadow(x, startY, width, height, 0);
+                    Skia.drawBlur(x, startY, width, height, 0);
+                    Skia.drawRoundedRect(x, startY, width, height, 0, Design.BACKGROUND_COLOR);
+                }
                 Skia.drawText(module.getDisplayName(), x + 2.5F, startY + 2.5F, syncColor.get() ? Theme.accent((int) (-startY * 0.1f)) : Design.TEXT_COLOR, font);
                 startY += height * (module.progress.value / 100f);
             }
