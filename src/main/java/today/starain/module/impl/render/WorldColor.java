@@ -2,6 +2,7 @@ package today.starain.module.impl.render;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import today.starain.Starain;
 import today.starain.module.Category;
@@ -13,6 +14,8 @@ import today.starain.utils.render.shader.ShaderHelper;
 import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ColorValue;
 import today.starain.value.impl.NumberValue;
+
+import org.lwjgl.opengl.GL30C;
 
 import java.awt.Color;
 
@@ -102,6 +105,9 @@ public class WorldColor extends ClientModule {
         float g = 1.0F - s + (base.getGreen() / 255.0F) * s;
         float b = 1.0F - s + (base.getBlue() / 255.0F) * s;
 
+        int previousFbo = GlStateManager._getInteger(GL30C.GL_FRAMEBUFFER_BINDING);
+        Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+
         RenderSystem.enableBlend();
         GlStateManager._blendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
         RenderSystem.disableDepthTest();
@@ -116,6 +122,10 @@ public class WorldColor extends ClientModule {
 
         BufferUploader.reset();
         ShaderHelper.useProgram(0);
+
+        if (previousFbo != 0) {
+            GlStateManager._glBindFramebuffer(GL30C.GL_FRAMEBUFFER, previousFbo);
+        }
 
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();

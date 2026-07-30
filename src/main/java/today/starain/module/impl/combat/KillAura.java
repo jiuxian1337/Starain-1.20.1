@@ -160,6 +160,10 @@ public class KillAura extends ClientModule {
         attacks = 0;
     }
 
+    public boolean isSwitchMode() {
+        return mode.isMode("Switch");
+    }
+
     @Override
     public String getSuffix() {
         return mode.get();
