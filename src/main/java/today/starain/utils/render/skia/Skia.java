@@ -169,6 +169,29 @@ public class Skia implements Wrapper {
         }
     }
 
+    public static void drawImageRegion(int textureId, float x, float y, float width, float height,
+                                       float u0, float v0, float u1, float v1, float alpha) {
+        drawImageRegion(textureId, x, y, width, height, u0, v0, u1, v1, alpha, 0);
+    }
+
+    public static void drawImageRegion(int textureId, float x, float y, float width, float height,
+                                       float u0, float v0, float u1, float v1, float alpha, int shadowArgb) {
+        int[] size = getGlTextureSize(textureId);
+        if (size[0] <= 0 || size[1] <= 0) {
+            return;
+        }
+        if (imageHelper.load(textureId, size[0], size[1], SurfaceOrigin.TOP_LEFT)) {
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setAlpha((int) (255 * alpha));
+            if (shadowArgb != 0) {
+                paint.setImageFilter(ImageFilter.makeDropShadow(0.6F, 0.8F, 0.9F, 0.9F, shadowArgb));
+            }
+            Rect src = Rect.makeLTRB(u0 * size[0], v0 * size[1], u1 * size[0], v1 * size[1]);
+            getCanvas().drawImageRect(imageHelper.get(textureId), src, Rect.makeXYWH(x, y, width, height), paint);
+        }
+    }
+
     public static void drawImage(int textureId, float x, float y, float width, float height, float alpha,
                                  SurfaceOrigin origin) {
 

@@ -58,6 +58,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
         modules.add(new ScoreboardModule());
+        modules.add(new EffectHUD());
         modules.add(new Criticals());
         modules.add(new KillAura());
         modules.add(new AutoHeal());

@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import today.starain.Starain;
 import today.starain.event.impl.RenderSkiaEvent;
+import today.starain.module.impl.client.EffectHUD;
 import today.starain.module.impl.client.HUD;
 import today.starain.module.impl.client.ScoreboardModule;
 import today.starain.utils.render.shader.impl.KawaseBlur;
@@ -23,6 +24,14 @@ import today.starain.utils.render.skia.context.SkiaContext;
 
 @Mixin(Gui.class)
 public class MixinGui {
+
+    @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
+    private void starain$suppressVanillaEffects(GuiGraphics guiGraphics, CallbackInfo ci) {
+        if (EffectHUD.isActive()) {
+            ci.cancel();
+        }
+    }
+
 
     @Inject(
             method = "render",
