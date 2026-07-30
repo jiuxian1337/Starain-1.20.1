@@ -15,7 +15,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -29,6 +31,7 @@ import today.starain.utils.render.shader.PostProcessRenderer;
 import today.starain.utils.render.shader.Shader;
 import today.starain.utils.render.shader.ShaderHelper;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,12 +97,17 @@ public class OutlineGlow {
         poseStack.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(phase * (float) Math.PI - 0.2F) * amount) * 5.0F));
     }
 
+    private static Object irisHandRenderer;
+    private static Field irisSolidField;
+    private static boolean irisChecked;
+
     private Shader shader;
     private Shader maskShader;
     private Framebuffer fbo;
     private int width;
     private int height;
 
+    @SuppressWarnings("unchecked")
     public void draw(PoseStack poseStack, float partialTick, List<? extends Entity> targets,
                      List<? extends BlockEntity> blockTargets,
                      float[] colors, int stops, float alpha, float radius, float strength, boolean antiAliasing,
@@ -145,7 +153,12 @@ public class OutlineGlow {
                 BlockPos pos = blockEntity.getBlockPos();
                 poseStack.pushPose();
                 poseStack.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
-                mc.getBlockEntityRenderDispatcher().render(blockEntity, partialTick, poseStack, maskBuffer);
+                BlockEntityRenderer<BlockEntity> blockRenderer =
+                        (BlockEntityRenderer<BlockEntity>) mc.getBlockEntityRenderDispatcher().getRenderer(blockEntity);
+                if (blockRenderer != null) {
+                    blockRenderer.render(blockEntity, partialTick, poseStack, maskBuffer,
+                            LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                }
                 poseStack.popPose();
             } catch (Throwable ignored) {
             }
@@ -167,10 +180,13 @@ public class OutlineGlow {
             if (mc.options.bobView().get()) {
                 bobView(poseStack, mc.player, partialTick);
             }
+            Boolean irisSolid = beginIrisHand();
             try {
                 mc.gameRenderer.itemInHandRenderer.renderHandsWithItems(partialTick, poseStack, maskBuffer,
                         mc.player, LightTexture.FULL_BRIGHT);
             } catch (Throwable ignored) {
+            } finally {
+                endIrisHand(irisSolid);
             }
             poseStack.popPose();
 
@@ -231,6 +247,53 @@ public class OutlineGlow {
         ShaderHelper.useProgram(0);
 
         applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow);
+    }
+
+    private static void initIris() {
+        if (irisChecked) {
+            return;
+        }
+        irisChecked = true;
+        String[] candidates = {
+                "net.irisshaders.iris.pathways.HandRenderer",
+                "net.coderbot.iris.pipeline.HandRenderer"
+        };
+        for (String name : candidates) {
+            try {
+                Class<?> cls = Class.forName(name);
+                Object instance = cls.getField("INSTANCE").get(null);
+                Field field = cls.getDeclaredField("renderingSolid");
+                field.setAccessible(true);
+                irisHandRenderer = instance;
+                irisSolidField = field;
+                return;
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    private static Boolean beginIrisHand() {
+        initIris();
+        if (irisHandRenderer == null || irisSolidField == null) {
+            return null;
+        }
+        try {
+            boolean previous = irisSolidField.getBoolean(irisHandRenderer);
+            irisSolidField.setBoolean(irisHandRenderer, true);
+            return previous;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static void endIrisHand(Boolean previous) {
+        if (previous == null || irisHandRenderer == null || irisSolidField == null) {
+            return;
+        }
+        try {
+            irisSolidField.setBoolean(irisHandRenderer, previous);
+        } catch (Throwable ignored) {
+        }
     }
 
     private void prepareFbo(Minecraft mc, boolean antiAliasing) {
