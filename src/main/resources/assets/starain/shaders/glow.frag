@@ -18,6 +18,7 @@ uniform float uAlpha;
 uniform float uRadius;
 uniform float uStrength;
 uniform float uInner;
+uniform float uVertical;
 
 float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -54,7 +55,8 @@ void main() {
     if (glow <= 0.002) discard;
 
     int last = max(uCount - 1, 1);
-    float pos = clamp(uv.x, 0.0, 1.0) * float(last);
+    float axis = uVertical > 0.5 ? (1.0 - uv.y) : uv.x;
+    float pos = clamp(axis, 0.0, 1.0) * float(last);
     int i0 = int(floor(pos));
     int i1 = min(i0 + 1, last);
     vec3 tint = mix(uColors[i0], uColors[i1], fract(pos));

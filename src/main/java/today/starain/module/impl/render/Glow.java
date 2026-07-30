@@ -113,35 +113,70 @@ public class Glow extends ClientModule {
     }
 
     private static final List<float[]> hudRects = new ArrayList<>();
+    private static final List<float[]> hudRectsHorizontal = new ArrayList<>();
 
     public static void queueHud(float x, float y, float width, float height, float radius) {
         queueHud(x, y, width, height, radius, 1.0F);
     }
 
     public static void queueHud(float x, float y, float width, float height, float radius, float alpha) {
+        queueHud(x, y, width, height, radius, alpha, false);
+    }
+
+    public static void queueHud(float x, float y, float width, float height, float radius, float alpha, boolean horizontal) {
         if (alpha <= 0.004F) {
             return;
         }
-        hudRects.add(new float[]{x, y, width, height, radius, Math.min(alpha, 1.0F)});
+        float[] rect = {x, y, width, height, radius, Math.min(alpha, 1.0F)};
+        if (horizontal) {
+            hudRectsHorizontal.add(rect);
+        } else {
+            hudRects.add(rect);
+        }
     }
 
     public static void flushHud() {
-        if (hudRects.isEmpty()) {
-            return;
+        if (!hudRects.isEmpty()) {
+            drawPanels(new ArrayList<>(hudRects), false);
+            hudRects.clear();
         }
-        drawPanels(new ArrayList<>(hudRects));
-        hudRects.clear();
+        if (!hudRectsHorizontal.isEmpty()) {
+            drawPanels(new ArrayList<>(hudRectsHorizontal), true);
+            hudRectsHorizontal.clear();
+        }
     }
 
     public static void drawPanels(List<float[]> rects) {
+        drawPanels(rects, false);
+    }
+
+    public static void drawPanels(List<float[]> rects, boolean horizontal) {
         Glow module = get();
         if (module == null || rects.isEmpty()) {
             return;
         }
-        Palette palette = module.buildPalette();
+        Palette palette = module.buildHudPalette(horizontal);
         OutlineGlow.INSTANCE.drawRects(rects, palette.colors(), palette.stops(), palette.alpha(),
                 module.radius.get().floatValue(), module.strength.get().floatValue(),
-                module.antiAliasing.get(), module.blend.isMode("Additive"), module.innerGlow.get());
+                module.antiAliasing.get(), module.blend.isMode("Additive"), module.innerGlow.get(), !horizontal);
+    }
+
+    private Palette buildHudPalette(boolean horizontal) {
+        if (!syncColor.get()) {
+            return buildPalette();
+        }
+        float rate = 0.1F;
+        int span = horizontal ? mc.getWindow().getGuiScaledWidth() : mc.getWindow().getGuiScaledHeight();
+        int stops = Math.max(2, Math.min(MAX_STOPS, Math.round(span * rate) + 1));
+        float[] colors = new float[stops * 3];
+        for (int i = 0; i < stops; i++) {
+            float pixel = span * i / (float) (stops - 1);
+            Color stop = Theme.accent((int) (-pixel * rate));
+            colors[i * 3] = stop.getRed() / 255.0F;
+            colors[i * 3 + 1] = stop.getGreen() / 255.0F;
+            colors[i * 3 + 2] = stop.getBlue() / 255.0F;
+        }
+        return new Palette(colors, stops, 1.0F);
     }
 
     private Palette buildPalette() {

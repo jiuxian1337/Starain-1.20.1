@@ -196,11 +196,12 @@ public class OutlineGlow {
             RenderSystem.setProjectionMatrix(oldProjection, oldSorting);
         }
 
-        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow);
+        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow, false);
     }
 
     public void drawRects(List<float[]> rects, float[] colors, int stops, float alpha,
-                          float radius, float strength, boolean antiAliasing, boolean additive, boolean innerGlow) {
+                          float radius, float strength, boolean antiAliasing, boolean additive, boolean innerGlow,
+                          boolean vertical) {
         Minecraft mc = Minecraft.getInstance();
         if (rects.isEmpty()) {
             return;
@@ -246,7 +247,7 @@ public class OutlineGlow {
         BufferUploader.reset();
         ShaderHelper.useProgram(0);
 
-        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow);
+        applyGlowPass(mc, colors, stops, alpha, radius, strength, additive, innerGlow, vertical);
     }
 
     private static void initIris() {
@@ -311,7 +312,7 @@ public class OutlineGlow {
     }
 
     private void applyGlowPass(Minecraft mc, float[] colors, int stops, float alpha,
-                               float radius, float strength, boolean additive, boolean innerGlow) {
+                               float radius, float strength, boolean additive, boolean innerGlow, boolean vertical) {
         mc.getMainRenderTarget().bindWrite(true);
 
         shader.bind();
@@ -324,6 +325,7 @@ public class OutlineGlow {
         shader.set("uRadius", radius * fbo.sizeMulti);
         shader.set("uStrength", strength);
         shader.set("uInner", innerGlow ? 1.0 : 0.0);
+        shader.set("uVertical", vertical ? 1.0 : 0.0);
 
         RenderSystem.enableBlend();
         GlStateManager._blendFunc(GL_SRC_ALPHA, additive ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);

@@ -167,7 +167,7 @@ public class TargetHUD extends ClientModule {
         }
 
         if (glow.get()) {
-            today.starain.module.impl.render.Glow.queueHud(x, y, width, height, 6.0f, alphaValue / 255.0f);
+            today.starain.module.impl.render.Glow.queueHud(x, y, width, height, 6.0f, alphaValue / 255.0f, true);
         }
 
         try (Paint layerPaint = new Paint()) {
