@@ -115,8 +115,8 @@ public class Scaffold extends ClientModule {
     private final BooleanValue swing = new BooleanValue("Swing", true, this);
     private final ModeValue rotMod = new ModeValue("RotationMode", "Rise", new String[]{"Rise", "Heypixel"}, this);
     private final ModeValue rayCast = new ModeValue("RayCast", "Normal", new String[]{"Normal", "Strict"}, this);
-    private final NumberValue rotateSpeed = new NumberValue("RotSpeed", 1.0, 180.0, 180.0, 1.0, this);
-    private final NumberValue rotateSpeed2 = new NumberValue("RotSpeed2", 1.0, 180.0, 180.0, 1.0, this, () -> rotMod.isMode("Heypixel"));
+    private final NumberValue rotateSpeed = new NumberValue("RotSpeed", 1.0, 180.0, 127.0, 1.0, this);
+    private final NumberValue rotateSpeed2 = new NumberValue("RotSpeed2", 1.0, 180.0, 36.0, 1.0, this, () -> rotMod.isMode("Heypixel"));
     private final NumberValue rotateBackSpeed = new NumberValue("BackSpeed", 1.0, 180.0, 180.0, 1.0, this, telly::get);
     private final NumberValue tellyTick = new NumberValue("TellyTicks", 0.0, 6.0, 1.0, 1.0, this, telly::get);
     private final BooleanValue safeWalk = new BooleanValue("SafeWalk", false, this, () -> !telly.get());
