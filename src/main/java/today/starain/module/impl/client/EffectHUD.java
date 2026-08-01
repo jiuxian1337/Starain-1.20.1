@@ -24,8 +24,8 @@ public class EffectHUD extends ClientModule {
 
     private static final Color DURATION_COLOR = new Color(170, 170, 170);
     private static final Color SHADOW_COLOR = new Color(0, 0, 0, 170);
-    private static final float ICON_SIZE = 9.0f;
     private static final int ICON_SHADOW = 0xB0000000;
+    private static final float ICON_GAP = 3.0f;
 
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final BooleanValue lowercase = new BooleanValue("Lowercase", false, this);
@@ -63,12 +63,21 @@ public class EffectHUD extends ClientModule {
         Font font = Fonts.getNormal(10.0f);
         effects.sort(Comparator.comparingDouble(instance -> -measure(instance, font)));
 
-        float anchorX = mc.getWindow().getGuiScaledWidth() - 2.0f;
         float textHeight = Skia.getTextBounds("Ay", font).getHeight();
-        float lineHeight = Math.max(textHeight, ICON_SIZE) + 1.5f;
-        float iconOffset = (textHeight - ICON_SIZE) / 2.0f;
+        float iconSize = icons.get() ? Math.max(8.0f, Math.round(textHeight + 2.0f)) : 0.0f;
+        float rowHeight = Math.max(textHeight, iconSize);
+        float lineHeight = rowHeight + 2.0f;
+
+        float maxTextWidth = 0.0f;
+        for (MobEffectInstance instance : effects) {
+            maxTextWidth = Math.max(maxTextWidth, measure(instance, font));
+        }
+
+        float anchorX = mc.getWindow().getGuiScaledWidth() - 3.0f;
+        float iconX = Math.round(anchorX - maxTextWidth - ICON_GAP - iconSize);
         float rowY = mc.getWindow().getGuiScaledHeight() - 3.0f - lineHeight;
 
+        int index = 0;
         for (MobEffectInstance instance : effects) {
             String name = buildName(instance);
             String duration = buildDuration(instance);
@@ -77,25 +86,27 @@ public class EffectHUD extends ClientModule {
             float textWidth = nameWidth + 3.0f + durationWidth;
 
             Color color = syncColor.get()
-                    ? Theme.accent((int) (-rowY * 0.1f))
+                    ? Theme.accent(index * 0.6d)
                     : new Color(instance.getEffect().getColor());
 
-            float textX = anchorX - textWidth - 1.0f;
+            float textX = anchorX - textWidth;
+            float textY = rowY + (rowHeight - textHeight) / 2.0f;
             float durationX = textX + nameWidth + 3.0f;
-            Skia.drawTextShadow(name, textX, rowY, SHADOW_COLOR, font);
-            Skia.drawTextShadow(duration, durationX, rowY, SHADOW_COLOR, font);
-            Skia.drawText(name, textX, rowY, color, font);
-            Skia.drawText(duration, durationX, rowY, DURATION_COLOR, font);
+            Skia.drawTextShadow(name, textX, textY, SHADOW_COLOR, font);
+            Skia.drawTextShadow(duration, durationX, textY, SHADOW_COLOR, font);
+            Skia.drawText(name, textX, textY, color, font);
+            Skia.drawText(duration, durationX, textY, DURATION_COLOR, font);
 
             if (icons.get()) {
-                drawIcon(instance, anchorX - textWidth - ICON_SIZE - 3.0f, rowY + iconOffset);
+                drawIcon(instance, iconX, Math.round(rowY + (rowHeight - iconSize) / 2.0f), iconSize);
             }
 
             rowY -= lineHeight;
+            index++;
         }
     }
 
-    private void drawIcon(MobEffectInstance instance, float x, float y) {
+    private void drawIcon(MobEffectInstance instance, float x, float y, float size) {
         try {
             TextureAtlasSprite sprite = mc.getMobEffectTextures().get(instance.getEffect());
             if (sprite == null) {
@@ -105,7 +116,7 @@ public class EffectHUD extends ClientModule {
             if (texture == null) {
                 return;
             }
-            Skia.drawImageRegion(texture.getId(), x, y, ICON_SIZE, ICON_SIZE,
+            Skia.drawSpriteRegion(texture.getId(), x, y, size, size,
                     sprite.getU0(), sprite.getV0(), sprite.getU1(), sprite.getV1(), 1.0f, ICON_SHADOW);
         } catch (Throwable ignored) {
         }
