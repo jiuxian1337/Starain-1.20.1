@@ -29,8 +29,13 @@ import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
+import today.starain.ui.Theme;
+
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class TargetHUD extends ClientModule {
@@ -40,6 +45,8 @@ public class TargetHUD extends ClientModule {
     private final BooleanValue glow = new BooleanValue("Glow", false, this);
     private final BooleanValue followPlayer = new BooleanValue("Follow Player", false, this);
     private final BooleanValue multiTarget = new BooleanValue("Multi Target", false, this);
+    private final BooleanValue hitParticles = new BooleanValue("Hit Particles", false, this);
+    private final NumberValue particleCount = new NumberValue("Particle Count", 4, 48, 20, 1, this, hitParticles::get);
     private final ModeValue side = new ModeValue("Side", "Right", new String[]{"Right", "Left", "Auto"}, this, followPlayer::get);
     private final NumberValue sideOffset = new NumberValue("Side Offset", 0, 80, 16, 1, this, followPlayer::get);
     private final NumberValue heightRatio = new NumberValue("Height", 0.0, 1.5, 0.8, 0.05, this, followPlayer::get);
@@ -48,7 +55,28 @@ public class TargetHUD extends ClientModule {
     private final SmoothAnimationTimer heal = new SmoothAnimationTimer(20.0F);
     private final SmoothAnimationTimer alpha = new SmoothAnimationTimer(255.0F);
     private final SmoothAnimationTimer hurtAlpha = new SmoothAnimationTimer(0.0F);
+    private final Map<Integer, HitEffect> hitEffects = new HashMap<>();
+    private long lastFrameNano;
+    private float frameDelta;
+    private float previewTimer;
     private AbstractClientPlayer target;
+
+    private static final class Particle {
+        float offsetX;
+        float offsetY;
+        float velocityX;
+        float velocityY;
+        float life;
+        float maxLife;
+        float size;
+        float phase;
+    }
+
+    private static final class HitEffect {
+        final List<Particle> particles = new ArrayList<>();
+        int lastHurtTime;
+        float lastHealth = Float.NaN;
+    }
 
     public TargetHUD() {
         setName("TargetHUD");
@@ -59,6 +87,7 @@ public class TargetHUD extends ClientModule {
     public void onRender(RenderSkiaEvent event) {
         if (mc.player == null) return;
         float partialTick = event.getPartialTick();
+        updateFrameDelta();
 
         if (mc.screen instanceof OpalClickGUI) {
             alpha.update(true);
@@ -66,6 +95,11 @@ public class TargetHUD extends ClientModule {
             target = mc.player;
             heal.update(true);
             hurtAlpha.update(true);
+            previewTimer += frameDelta;
+            if (hitParticles.get() && previewTimer >= 1.2f) {
+                previewTimer = 0.0f;
+                spawnBurst(effectFor(mc.player));
+            }
             drawHud(mc.player, this.x.get().floatValue(), this.y.get().floatValue(), "Fixed",
                     alpha.value, heal.value, hurtAlpha.value);
             return;
@@ -207,6 +241,83 @@ public class TargetHUD extends ClientModule {
             }
             path.close();
             Skia.restore();
+        }
+        if (hitParticles.get()) {
+            renderParticles(target, x + 20.0f, y + 20.0f, alphaValue / 255.0f);
+        }
+    }
+
+    private void updateFrameDelta() {
+        long now = System.nanoTime();
+        frameDelta = lastFrameNano == 0L ? 0.0f : Math.min(0.05f, (now - lastFrameNano) / 1.0E9f);
+        lastFrameNano = now;
+    }
+
+    private HitEffect effectFor(AbstractClientPlayer player) {
+        if (hitEffects.size() > 32) hitEffects.clear();
+        return hitEffects.computeIfAbsent(player.getId(), id -> new HitEffect());
+    }
+
+    private void renderParticles(AbstractClientPlayer player, float centerX, float centerY, float alphaScale) {
+        HitEffect effect = effectFor(player);
+        if (effect.particles.isEmpty() && player.hurtTime <= effect.lastHurtTime) {
+            effect.lastHurtTime = player.hurtTime;
+            effect.lastHealth = player.getHealth();
+            return;
+        }
+        float health = player.getHealth();
+        boolean hurt = player.hurtTime > effect.lastHurtTime
+                || (!Float.isNaN(effect.lastHealth) && health < effect.lastHealth - 0.01f);
+        effect.lastHurtTime = player.hurtTime;
+        effect.lastHealth = health;
+        if (hurt) spawnBurst(effect);
+
+        double phaseSpan = 360.0 / themeSpread();
+        Iterator<Particle> iterator = effect.particles.iterator();
+        while (iterator.hasNext()) {
+            Particle particle = iterator.next();
+            particle.life -= frameDelta;
+            if (particle.life <= 0.0f) {
+                iterator.remove();
+                continue;
+            }
+            particle.velocityY += 110.0f * frameDelta;
+            particle.offsetX += particle.velocityX * frameDelta;
+            particle.offsetY += particle.velocityY * frameDelta;
+
+            float progress = particle.life / particle.maxLife;
+            int particleAlpha = (int) (255.0f * progress * alphaScale);
+            if (particleAlpha <= 2) continue;
+            Color base = syncColor.get() ? Theme.accent(particle.phase * phaseSpan) : new Color(255, 160, 160);
+            float drawX = centerX + particle.offsetX;
+            float drawY = centerY + particle.offsetY;
+            float radius = particle.size * (0.5f + 0.5f * progress);
+            Skia.drawCircle(drawX, drawY, radius * 2.6f,
+                    new Color(base.getRed(), base.getGreen(), base.getBlue(), particleAlpha / 6));
+            Skia.drawCircle(drawX, drawY, radius,
+                    new Color(base.getRed(), base.getGreen(), base.getBlue(), particleAlpha));
+        }
+    }
+
+    private int themeSpread() {
+        HUD hud = Starain.getInstance().getModuleManager().getModule(HUD.class);
+        return hud == null ? 1 : Math.max(1, hud.getThemeSpread());
+    }
+
+    private void spawnBurst(HitEffect effect) {
+        int count = particleCount.get().intValue();
+        if (effect.particles.size() > count * 6) return;
+        for (int i = 0; i < count; i++) {
+            Particle particle = new Particle();
+            double angle = i / (double) count * Math.PI * 2.0d + (Math.random() - 0.5d) * 0.4d;
+            double speed = 48.0d + Math.random() * 62.0d;
+            particle.velocityX = (float) (Math.cos(angle) * speed);
+            particle.velocityY = (float) (Math.sin(angle) * speed) - 26.0f;
+            particle.maxLife = 0.55f + (float) Math.random() * 0.4f;
+            particle.life = particle.maxLife;
+            particle.size = 1.7f + (float) Math.random() * 1.7f;
+            particle.phase = i / (float) count;
+            effect.particles.add(particle);
         }
     }
 
