@@ -68,13 +68,7 @@ public class EffectHUD extends ClientModule {
         float rowHeight = Math.max(textHeight, iconSize);
         float lineHeight = rowHeight + 2.0f;
 
-        float maxTextWidth = 0.0f;
-        for (MobEffectInstance instance : effects) {
-            maxTextWidth = Math.max(maxTextWidth, measure(instance, font));
-        }
-
         float anchorX = mc.getWindow().getGuiScaledWidth() - 3.0f;
-        float iconX = Math.round(anchorX - maxTextWidth - ICON_GAP - iconSize);
         float rowY = mc.getWindow().getGuiScaledHeight() - 3.0f - lineHeight;
 
         int index = 0;
@@ -98,7 +92,8 @@ public class EffectHUD extends ClientModule {
             Skia.drawText(duration, durationX, textY, DURATION_COLOR, font);
 
             if (icons.get()) {
-                drawIcon(instance, iconX, Math.round(rowY + (rowHeight - iconSize) / 2.0f), iconSize);
+                drawIcon(instance, Math.round(textX - ICON_GAP - iconSize),
+                        Math.round(rowY + (rowHeight - iconSize) / 2.0f), iconSize);
             }
 
             rowY -= lineHeight;
