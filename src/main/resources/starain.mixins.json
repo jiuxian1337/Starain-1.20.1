@@ -16,6 +16,7 @@
                    "MixinClientLevel",
                    "MixinClientPacketListener",
                    "MixinCommandSuggestions",
+                   "MixinSuggestionsList",
                    "MixinEntityRenderer",
                    "MixinGameRenderer",
                    "MixinGui",

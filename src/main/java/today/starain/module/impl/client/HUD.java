@@ -20,6 +20,12 @@ public class HUD extends ClientModule {
     private final BooleanValue shadow = new BooleanValue("Shadow", false, this);
     private final ColorValue shadowColor = new ColorValue("Shadow Color", new Color(0, 0, 0, 120), this, shadow::get);
     private final BooleanValue chatBackground = new BooleanValue("Chat Background", true, this);
+    private final BooleanValue smoothChat = new BooleanValue("Smooth Chat", false, this);
+    private final BooleanValue chatHud = new BooleanValue("Chat HUD", false, this);
+    private final NumberValue chatWidth = new NumberValue("Chat Width", 80F, 400F, 320F, 1F, this, chatHud::get);
+    private final NumberValue chatOpenHeight = new NumberValue("Chat Open Height", 20F, 250F, 130F, 1F, this, chatHud::get);
+    private final NumberValue chatClosedHeight = new NumberValue("Chat Closed Height", 20F, 250F, 130F, 1F, this, chatHud::get);
+    private final NumberValue chatDuration = new NumberValue("Chat Duration", 1000F, 15000F, 5000F, 500F, this, chatHud::get);
 
     private final ModeValue themeMode = new ModeValue("Theme Mode", "Gradient", new String[]{"Solid", "Gradient", "Rainbow"}, this);
     private final ColorValue themePrimary = new ColorValue("Theme Primary", new Color(91, 207, 250), this);
@@ -68,6 +74,48 @@ public class HUD extends ClientModule {
         }
         HUD hud = starain.getModuleManager().getModule(HUD.class);
         return hud != null && hud.chatBackground.get();
+    }
+
+    public static boolean isChatHudEnabled() {
+        HUD hud = instance();
+        return hud != null && hud.chatHud.get();
+    }
+
+    public static float getChatHudWidth() {
+        HUD hud = instance();
+        return hud == null ? 320F : hud.chatWidth.get().floatValue();
+    }
+
+    public static float getChatHudOpenHeight() {
+        HUD hud = instance();
+        return hud == null ? 130F : hud.chatOpenHeight.get().floatValue();
+    }
+
+    public static float getChatHudClosedHeight() {
+        HUD hud = instance();
+        return hud == null ? 130F : hud.chatClosedHeight.get().floatValue();
+    }
+
+    public static float getChatHudDuration() {
+        HUD hud = instance();
+        return hud == null ? 5000F : hud.chatDuration.get().floatValue();
+    }
+
+    private static HUD instance() {
+        Starain starain = Starain.getInstance();
+        if (starain == null || starain.getModuleManager() == null) {
+            return null;
+        }
+        return starain.getModuleManager().getModule(HUD.class);
+    }
+
+    public static boolean isSmoothChatEnabled() {
+        Starain starain = Starain.getInstance();
+        if (starain == null || starain.getModuleManager() == null) {
+            return false;
+        }
+        HUD hud = starain.getModuleManager().getModule(HUD.class);
+        return hud != null && hud.smoothChat.get();
     }
 
     @Override

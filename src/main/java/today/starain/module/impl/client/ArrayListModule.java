@@ -24,6 +24,7 @@ public final class ArrayListModule extends ClientModule {
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final BooleanValue background = new BooleanValue("Background", true, this);
     private final BooleanValue glow = new BooleanValue("Glow", false, this);
+    private final BooleanValue sidebar = new BooleanValue("Sidebar", false, this);
     private final BooleanValue hideRenderModule = new BooleanValue("Hide Render Module", true, this);
 
     public ArrayListModule() {
@@ -56,7 +57,11 @@ public final class ArrayListModule extends ClientModule {
                     Skia.drawBlur(x, startY, width, height, 0);
                     Skia.drawRoundedRect(x, startY, width, height, 0, Design.BACKGROUND_COLOR);
                 }
-                Skia.drawText(module.getDisplayName(), x + 2.5F, startY + 2.5F, syncColor.get() ? Theme.accent((int) (-startY * 0.1f)) : Design.TEXT_COLOR, font);
+                java.awt.Color textColor = syncColor.get() ? Theme.accent(-startY * 0.1d) : Design.TEXT_COLOR;
+                Skia.drawText(module.getDisplayName(), x + 2.5F, startY + 2.5F, textColor, font);
+                if (sidebar.get()) {
+                    Skia.drawRoundedRect(x + width - 2.5F, startY + 1.5F, 2.0F, height - 3.0F, 1.0F, textColor);
+                }
                 startY += height * (module.progress.value / 100f);
             }
         }

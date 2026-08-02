@@ -19,6 +19,7 @@ import today.starain.module.impl.client.EffectHUD;
 import today.starain.module.impl.client.HUD;
 import today.starain.module.impl.client.ScoreboardModule;
 import today.starain.utils.render.shader.impl.KawaseBlur;
+import today.starain.utils.client.ChatHudRenderer;
 import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.context.SkiaContext;
 
@@ -81,6 +82,7 @@ public class MixinGui {
                     Skia.shadowPath = new Path();
                 }
 
+                ChatHudRenderer.renderPanel();
                 Starain.getInstance().getEventManager().call(new RenderSkiaEvent(guiGraphics, partialTick));
                 Skia.restore();
             });

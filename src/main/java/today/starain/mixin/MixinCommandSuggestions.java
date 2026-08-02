@@ -6,15 +6,19 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.CommandSuggestions;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.commands.SharedSuggestionProvider;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import today.starain.Starain;
+import today.starain.utils.client.ChatHudRenderer;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +47,42 @@ public abstract class MixinCommandSuggestions {
 
     @Shadow
     private boolean allowSuggestions;
+
+    @Shadow
+    @Final
+    private int fillColor;
+
+    @Unique
+    private boolean starain$suggestionShift;
+
+    @Inject(method = "render", at = @At("HEAD"))
+    private void starain$suggestionsHead(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo ci) {
+        if (!ChatHudRenderer.isActive()) {
+            return;
+        }
+        ChatHudRenderer.beginSuggestions(fillColor);
+        starain$suggestionShift = true;
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(ChatHudRenderer.MARGIN, -ChatHudRenderer.MARGIN, 0.0f);
+    }
+
+    @Inject(method = "render", at = @At("RETURN"))
+    private void starain$suggestionsReturn(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo ci) {
+        if (starain$suggestionShift) {
+            starain$suggestionShift = false;
+            guiGraphics.pose().popPose();
+        }
+    }
+
+    @Redirect(
+            method = "renderUsage",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V")
+    )
+    private void starain$usageFill(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
+        if (!ChatHudRenderer.captureSuggestion(x1, y1, x2, y2, color)) {
+            guiGraphics.fill(x1, y1, x2, y2, color);
+        }
+    }
 
     @Shadow
     @Final
