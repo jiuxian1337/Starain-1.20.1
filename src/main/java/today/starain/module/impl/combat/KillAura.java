@@ -134,8 +134,8 @@ public class KillAura extends ClientModule {
             if (mc.player.isUsingItem()) return;
             if (mc.hitResult instanceof EntityHitResult entityHitResult) {
                 mc.gameMode.attack(mc.player, entityHitResult.getEntity());
+                mc.player.swing(InteractionHand.MAIN_HAND);
             }
-            mc.player.swing(InteractionHand.MAIN_HAND);
         }
     }
 
