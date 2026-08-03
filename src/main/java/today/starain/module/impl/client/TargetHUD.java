@@ -56,6 +56,7 @@ public class TargetHUD extends ClientModule {
     private final SmoothAnimationTimer alpha = new SmoothAnimationTimer(255.0F);
     private final SmoothAnimationTimer hurtAlpha = new SmoothAnimationTimer(0.0F);
     private final Map<Integer, HitEffect> hitEffects = new HashMap<>();
+    private final Map<Integer, RollText> healthRolls = new HashMap<>();
     private long lastFrameNano;
     private float frameDelta;
     private float previewTimer;
@@ -70,6 +71,19 @@ public class TargetHUD extends ClientModule {
         float maxLife;
         float size;
         float phase;
+    }
+
+    private static final class RollSlot {
+        char shown;
+        char incoming;
+        float progress = 1.0f;
+        int direction = 1;
+    }
+
+    private static final class RollText {
+        final List<RollSlot> slots = new ArrayList<>();
+        float value = Float.NaN;
+        long lastSeen;
     }
 
     private static final class HitEffect {
@@ -229,21 +243,100 @@ public class TargetHUD extends ClientModule {
                 Skia.drawRect(x + 40.0f, y + 30.5f, healthWidth, 5.0f, new Color(200, 200, 200));
             }
             Skia.restore();
-            String healthText = String.format("%.2f", healValue);
+            String healthText = String.format("%.2f", target.getHealth());
             if (syncColor.get()) {
                 Skia.drawGradientText(name, x + 40.0f, y + 4.5f, miSans);
                 Skia.drawGradientText("\ue87d", x + 40.0f, y + 18f, iconFill);
-                Skia.drawGradientText(healthText, x + 40.0f + heartIconWidth, y + 17.5f, miSans);
             } else {
                 Skia.drawText(name, x + 40.0f, y + 4.5f, Design.TEXT_COLOR, miSans);
                 Skia.drawText("\ue87d", x + 40.0f, y + 18f, new Color(200, 200, 200), iconFill);
-                Skia.drawText(healthText, x + 40.0f + heartIconWidth, y + 17.5f, new Color(200, 200, 200), miSans);
             }
+            drawRolling(target.getId(), healthText, target.getHealth(),
+                    x + 40.0f + heartIconWidth, y + 17.5f, miSans);
             path.close();
             Skia.restore();
         }
         if (hitParticles.get()) {
             renderParticles(target, x + 20.0f, y + 20.0f, alphaValue / 255.0f);
+        }
+    }
+
+    private void drawRolling(int id, String text, float value, float x, float yTop, Font font) {
+        if (healthRolls.size() > 32) healthRolls.clear();
+        RollText roll = healthRolls.computeIfAbsent(id, key -> new RollText());
+        long now = System.nanoTime();
+        boolean fresh = Float.isNaN(roll.value) || now - roll.lastSeen > 300_000_000L;
+        roll.lastSeen = now;
+        if (fresh) {
+            snap(roll, text);
+            roll.value = value;
+        } else if (Math.abs(value - roll.value) > 0.001f) {
+            sync(roll, text, value >= roll.value ? 1 : -1);
+            roll.value = value;
+        }
+
+        Rect bounds = font.measureText(text);
+        float penX = x - bounds.getLeft();
+        float baseline = yTop - bounds.getTop();
+        float travel = bounds.getHeight() + 2.0f;
+
+        Skia.save();
+        Skia.clipRect(x - 1.0f, yTop - 1.0f, font.measureTextWidth(text) + 3.0f, bounds.getHeight() + 3.0f);
+        for (int i = 0; i < roll.slots.size(); i++) {
+            RollSlot slot = roll.slots.get(i);
+            slot.progress = Math.min(1.0f, slot.progress + frameDelta * 4.5f);
+            String incoming = String.valueOf(slot.incoming);
+            Color color = syncColor.get() ? Theme.accent(-i) : new Color(200, 200, 200);
+            if (slot.progress >= 1.0f) {
+                Skia.drawBaselineText(incoming, penX, baseline, color.getRGB() | 0xFF000000, font);
+            } else {
+                float eased = 1.0f - (float) Math.pow(1.0f - slot.progress, 3.0d);
+                int outAlpha = (int) (255.0f * (1.0f - eased));
+                int inAlpha = (int) (255.0f * eased);
+                Skia.drawBaselineText(String.valueOf(slot.shown), penX,
+                        baseline - slot.direction * travel * eased,
+                        (outAlpha << 24) | (color.getRGB() & 0xFFFFFF), font);
+                Skia.drawBaselineText(incoming, penX,
+                        baseline + slot.direction * travel * (1.0f - eased),
+                        (inAlpha << 24) | (color.getRGB() & 0xFFFFFF), font);
+            }
+            penX += font.measureTextWidth(incoming);
+        }
+        Skia.restore();
+    }
+
+    private static void snap(RollText roll, String text) {
+        roll.slots.clear();
+        for (int i = 0; i < text.length(); i++) {
+            RollSlot slot = new RollSlot();
+            slot.shown = text.charAt(i);
+            slot.incoming = text.charAt(i);
+            slot.progress = 1.0f;
+            roll.slots.add(slot);
+        }
+    }
+
+    private static void sync(RollText roll, String text, int direction) {
+        while (roll.slots.size() > text.length()) {
+            roll.slots.remove(roll.slots.size() - 1);
+        }
+        while (roll.slots.size() < text.length()) {
+            RollSlot slot = new RollSlot();
+            slot.shown = ' ';
+            slot.incoming = text.charAt(roll.slots.size());
+            slot.progress = 0.0f;
+            slot.direction = direction;
+            roll.slots.add(slot);
+        }
+        for (int i = 0; i < text.length(); i++) {
+            RollSlot slot = roll.slots.get(i);
+            char next = text.charAt(i);
+            if (slot.incoming != next) {
+                slot.shown = slot.incoming;
+                slot.incoming = next;
+                slot.progress = 0.0f;
+                slot.direction = direction;
+            }
         }
     }
 
