@@ -128,7 +128,6 @@ public class KillAura extends ClientModule {
 
     @EventTarget
     public void onPlayerTick(PlayerTickEvent event) {
-
         while (attacks > 0) {
             attacks--;
             if (mc.player.isUsingItem()) return;
