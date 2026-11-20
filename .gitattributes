@@ -1,0 +1,22 @@
+# Normalize line endings for text, never touch binaries.
+* text=auto
+
+*.java    text
+*.gradle  text
+*.md      text
+*.json    text
+*.yml     text
+*.toml    text
+*.properties text
+*.html    text
+*.css     text
+*.js      text
+*.vert    text
+*.frag    text
+*.accesswidener text
+
+*.ttf     binary
+*.png     binary
+*.wav     binary
+*.dll     binary
+*.jar     binary
