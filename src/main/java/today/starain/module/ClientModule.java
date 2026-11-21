@@ -44,7 +44,6 @@ public class ClientModule implements Wrapper {
         }
 
         this.enabled = enabled;
-        Notification.playToggleSound(enabled);
         if (enabled) {
             Starain.getInstance().getEventManager().register(this);
             onEnable();
@@ -52,6 +51,7 @@ public class ClientModule implements Wrapper {
             Starain.getInstance().getEventManager().unregister(this);
             onDisable();
         }
+        Starain.getInstance().getModuleManager().getModule(Notification.class).toggleModule(enabled, this);
     }
 
     public boolean toogle() {

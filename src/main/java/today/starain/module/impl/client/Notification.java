@@ -16,7 +16,7 @@ public class Notification extends ClientModule {
         setCategory(Category.CLIENT);
     }
 
-    public static void playToggleSound(boolean enabled) {
+    public void toggleModule(boolean enabled, ClientModule module) {
         if (mc.player == null) return;
         Notification notification = Starain.getInstance().getModuleManager().getModule(Notification.class);
         if (!notification.isEnabled()) return;
