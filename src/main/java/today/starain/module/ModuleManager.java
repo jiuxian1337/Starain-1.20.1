@@ -54,6 +54,11 @@ public class ModuleManager implements Wrapper {
         modules.add(new Glow());
         modules.add(new ESP2D());
         modules.add(new ItemPhysics());
+        modules.add(new today.starain.module.impl.render.Chat());
+        modules.add(new today.starain.module.impl.render.HandLightning());
+        modules.add(new today.starain.module.impl.render.Zoom());
+        modules.add(new today.starain.module.impl.render.FreeLook());
+        modules.add(new today.starain.module.impl.render.AlertLog());
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());
         modules.add(new Notification());

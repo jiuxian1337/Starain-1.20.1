@@ -11,6 +11,7 @@
         "MixinPlayer"
     ],
     "client": [
+        "MixinCamera",
         "MixinChatComponent",
         "MixinChatScreen",
         "MixinClientLevel",
@@ -22,6 +23,7 @@
         "MixinGui",
         "MixinItemEntityRenderer",
         "MixinItemInHandRenderer",
+        "MixinItemRenderer",
         "MixinKeyboardHandler",
         "MixinKeyboardInput",
         "MixinLightTexture",

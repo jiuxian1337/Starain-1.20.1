@@ -64,7 +64,7 @@ public class MixinChatComponent implements ChatComponentDuck {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V")
     )
     private void starain$chatFill(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
-        if (HUD.isChatBackgroundEnabled() || Math.abs(x2 - x1) <= 8 || Math.abs(y2 - y1) < 8) {
+        if (today.starain.module.impl.render.Chat.isChatBackgroundEnabled() || Math.abs(x2 - x1) <= 8 || Math.abs(y2 - y1) < 8) {
             guiGraphics.fill(x1, y1, x2, y2, color);
         }
     }
@@ -92,7 +92,7 @@ public class MixinChatComponent implements ChatComponentDuck {
                     ChatHudRenderer.wrapLineWidth(), Minecraft.getInstance().font).size());
             return;
         }
-        if (chatScrollbarPos == 0 && HUD.isSmoothChatEnabled()) {
+        if (chatScrollbarPos == 0 && today.starain.module.impl.render.Chat.isSmoothChatEnabled()) {
             starain$messageAnim = 1.0f;
         }
     }
@@ -106,7 +106,7 @@ public class MixinChatComponent implements ChatComponentDuck {
         }
         starain$scrollBase = chatScrollbarPos;
         starain$extraLines = 0;
-        if (!HUD.isSmoothChatEnabled()) {
+        if (!today.starain.module.impl.render.Chat.isSmoothChatEnabled()) {
             starain$scrollAnim = chatScrollbarPos;
             starain$messageAnim = 0.0f;
             starain$lastNano = 0L;
@@ -213,3 +213,4 @@ public class MixinChatComponent implements ChatComponentDuck {
         return (float) (9.0d * (spacing + 1.0d) * ((ChatComponent) (Object) this).getScale());
     }
 }
+

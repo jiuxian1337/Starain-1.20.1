@@ -17,6 +17,24 @@ public abstract class MixinMouseHandler {
     @Final
     private Minecraft minecraft;
 
+    @org.spongepowered.asm.mixin.injection.Redirect(method = "onScroll", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V"))
+    private void starain$zoomScroll(net.minecraft.world.entity.player.Inventory inventory, double amount) {
+        if (!today.starain.module.impl.render.Zoom.onScroll(amount)) {
+            inventory.swapPaint(amount);
+        }
+    }
+
+    @org.spongepowered.asm.mixin.injection.Redirect(method = "turnPlayer", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"))
+    private void starain$freeLook(net.minecraft.client.player.LocalPlayer player, double dx, double dy) {
+        if (today.starain.module.impl.render.FreeLook.isActive()) {
+            today.starain.module.impl.render.FreeLook.turn(dx, dy);
+        } else {
+            player.turn(dx, dy);
+        }
+    }
+
     @Inject(method = "onPress", at = @At("HEAD"))
     private void starain$onPress(long window, int button, int action, int modifiers, CallbackInfo ci) {
         if (Starain.getInstance() == null || Starain.getInstance().getEventManager() == null) {

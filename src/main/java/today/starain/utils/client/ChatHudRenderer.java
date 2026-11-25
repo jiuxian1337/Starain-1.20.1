@@ -62,11 +62,11 @@ public final class ChatHudRenderer {
     }
 
     public static boolean isActive() {
-        return HUD.isChatHudEnabled();
+        return today.starain.module.impl.render.Chat.isChatHudEnabled();
     }
 
     public static int wrapWidth(ChatComponent chat) {
-        return (int) ((HUD.getChatHudWidth() - 10.0f) * chat.getScale());
+        return (int) ((today.starain.module.impl.render.Chat.getChatHudWidth() - 10.0f) * chat.getScale());
     }
 
     public static int scrollBase() {
@@ -78,7 +78,7 @@ public final class ChatHudRenderer {
     }
 
     public static int wrapLineWidth() {
-        return (int) (HUD.getChatHudWidth() - 10.0f);
+        return (int) (today.starain.module.impl.render.Chat.getChatHudWidth() - 10.0f);
     }
 
     public static void onMessage(int added) {
@@ -88,7 +88,7 @@ public final class ChatHudRenderer {
     public static void pushInput(int top, int bottom, int textWidth) {
         // 默认与聊天面板同宽，输入更长时再加宽
         float base = panelValid && panelWidth >= 1.0f ? panelWidth : 90.0f;
-        inputTargetWidth = Math.min(Math.max(HUD.getChatHudWidth(), base), Math.max(base, textWidth + 14.0f));
+        inputTargetWidth = Math.min(Math.max(today.starain.module.impl.render.Chat.getChatHudWidth(), base), Math.max(base, textWidth + 14.0f));
         if (animInputWidth <= 0.0f) {
             animInputWidth = inputTargetWidth;
         }
@@ -129,7 +129,7 @@ public final class ChatHudRenderer {
     }
 
     public static void renderPanel() {
-        if (!isActive() || !HUD.isChatBackgroundEnabled()) {
+        if (!isActive() || !today.starain.module.impl.render.Chat.isChatBackgroundEnabled()) {
             return;
         }
         if (panelValid && panelWidth >= 1.0f && panelHeight >= 1.0f) {
@@ -189,8 +189,8 @@ public final class ChatHudRenderer {
 
         animInputWidth += (inputTargetWidth - animInputWidth) * factor;
 
-        float openLocal = HUD.getChatHudOpenHeight() / scale;
-        float closedLocal = HUD.getChatHudClosedHeight() / scale;
+        float openLocal = today.starain.module.impl.render.Chat.getChatHudOpenHeight() / scale;
+        float closedLocal = today.starain.module.impl.render.Chat.getChatHudClosedHeight() / scale;
         int closedRows = Math.max(0, Mth.floor(closedLocal / lineHeight));
 
         if (pendingLines > 0) {
@@ -206,7 +206,7 @@ public final class ChatHudRenderer {
         long now = System.currentTimeMillis();
         if (recentLines <= 0) {
             lastDisappear = now;
-        } else if (now - lastDisappear >= (long) HUD.getChatHudDuration()) {
+        } else if (now - lastDisappear >= (long) today.starain.module.impl.render.Chat.getChatHudDuration()) {
             lastDisappear = now;
             recentLines--;
         }
@@ -240,7 +240,7 @@ public final class ChatHudRenderer {
         hitRows = visible;
         int rows = Mth.ceil(animHeight / lineHeight) + 2;
 
-        float limit = HUD.getChatHudWidth() / scale;
+        float limit = today.starain.module.impl.render.Chat.getChatHudWidth() / scale;
         float longest = 0.0f;
         for (int row = 0; row < rows; row++) {
             int index = base + row;
@@ -305,7 +305,7 @@ public final class ChatHudRenderer {
     }
 
     private static void syncWidth(ChatComponent chat) {
-        float current = HUD.getChatHudWidth();
+        float current = today.starain.module.impl.render.Chat.getChatHudWidth();
         if (current != lastWidth) {
             lastWidth = current;
             chat.rescaleChat();
@@ -319,4 +319,5 @@ public final class ChatHudRenderer {
         return delta;
     }
 }
+
 

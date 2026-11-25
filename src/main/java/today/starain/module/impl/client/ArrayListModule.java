@@ -24,6 +24,7 @@ public final class ArrayListModule extends ClientModule {
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final BooleanValue background = new BooleanValue("Background", true, this);
     private final BooleanValue glow = new BooleanValue("Glow", false, this);
+    private final today.starain.value.impl.ModeValue backgroundMode = new today.starain.value.impl.ModeValue("Background Mode", "Blur", new String[]{"Blur", "Glow"}, this, background::get);
     private final BooleanValue sidebar = new BooleanValue("Sidebar", false, this);
     private final today.starain.value.impl.NumberValue scale = new today.starain.value.impl.NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final BooleanValue hideRenderModule = new BooleanValue("Hide Render Module", true, this);
@@ -62,7 +63,12 @@ public final class ArrayListModule extends ClientModule {
                 if (glow.get()) {
                     today.starain.module.impl.render.Glow.queueHud(x, startY - 0.5F, width, height + 1.0F, 0, module.progress.value / 100.0f);
                 }
-                if (background.get()) {
+                if (background.get() && backgroundMode.isMode("Glow")) {
+                    // 发光背景：主题色淡填充 + 合并的外发光轮廓
+                    today.starain.module.impl.render.Glow.queueHud(x, startY - 0.5F, width, height + 1.0F, 0, module.progress.value / 100.0f);
+                    java.awt.Color tint = Theme.accent(-startY * 0.1d);
+                    Skia.drawRoundedRect(x, startY, width, height, 0, new java.awt.Color(tint.getRed(), tint.getGreen(), tint.getBlue(), 70));
+                } else if (background.get()) {
                     Skia.drawShadow(x, startY, width, height, 0);
                     Skia.drawBlur(x, startY, width, height, 0);
                     Skia.drawRoundedRect(x, startY, width, height, 0, Design.BACKGROUND_COLOR);
@@ -77,4 +83,5 @@ public final class ArrayListModule extends ClientModule {
         }
     }
 }
+
 

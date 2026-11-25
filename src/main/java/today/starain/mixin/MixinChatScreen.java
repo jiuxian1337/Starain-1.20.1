@@ -34,7 +34,7 @@ public class MixinChatScreen {
             ChatHudRenderer.pushInput(y1, y2, Minecraft.getInstance().font.width(input.getValue()));
             return;
         }
-        if (HUD.isChatBackgroundEnabled()) {
+        if (today.starain.module.impl.render.Chat.isChatBackgroundEnabled()) {
             guiGraphics.fill(x1, y1, x2, y2, color);
         }
     }
@@ -68,3 +68,4 @@ public class MixinChatScreen {
         cir.setReturnValue(true);
     }
 }
+
