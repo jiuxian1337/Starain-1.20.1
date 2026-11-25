@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import today.starain.ui.HudDrag;
+import today.starain.value.impl.NumberValue;
 
 public class EffectHUD extends ClientModule {
 
@@ -29,8 +31,11 @@ public class EffectHUD extends ClientModule {
 
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final BooleanValue lowercase = new BooleanValue("Lowercase", false, this);
-    private final today.starain.value.impl.NumberValue scale = new today.starain.value.impl.NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
+    private final NumberValue scale = new NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final BooleanValue icons = new BooleanValue("Icons", true, this);
+    // 相对右下角的偏移，聊天界面中可拖拽调整
+    private final NumberValue offsetX = new NumberValue("X", 0, 1000, 3, 1, this, () -> false);
+    private final NumberValue offsetY = new NumberValue("Y", 0, 1000, 3, 1, this, () -> false);
 
     public EffectHUD() {
         setName("EffectHUD");
@@ -48,11 +53,11 @@ public class EffectHUD extends ClientModule {
 
     @EventTarget
     public void onRender(RenderSkiaEvent event) {
-        today.starain.utils.render.skia.Skia.beginHudScale(mc.getWindow().getGuiScaledWidth() / 2.0f, mc.getWindow().getGuiScaledHeight(), scale.get().floatValue());
+        Skia.beginHudScale(mc.getWindow().getGuiScaledWidth() - offsetX.get().floatValue(), mc.getWindow().getGuiScaledHeight() - offsetY.get().floatValue(), scale.get().floatValue());
         try {
             renderScaled(event);
         } finally {
-            today.starain.utils.render.skia.Skia.endHudScale();
+            Skia.endHudScale();
         }
     }
 
@@ -78,8 +83,10 @@ public class EffectHUD extends ClientModule {
         float rowHeight = Math.max(textHeight, iconSize);
         float lineHeight = rowHeight + 2.0f;
 
-        float anchorX = mc.getWindow().getGuiScaledWidth() - 3.0f;
-        float rowY = mc.getWindow().getGuiScaledHeight() - 3.0f - lineHeight;
+        float anchorX = mc.getWindow().getGuiScaledWidth() - offsetX.get().floatValue();
+        float bottomY = mc.getWindow().getGuiScaledHeight() - offsetY.get().floatValue();
+        float rowY = bottomY - lineHeight;
+        float minX = anchorX;
 
         int index = 0;
         for (MobEffectInstance instance : effects) {
@@ -106,9 +113,11 @@ public class EffectHUD extends ClientModule {
                         Math.round(rowY + (rowHeight - iconSize) / 2.0f), iconSize);
             }
 
+            minX = Math.min(minX, textX - (icons.get() ? ICON_GAP + iconSize : 0.0f));
             rowY -= lineHeight;
             index++;
         }
+        HudDrag.report(this, offsetX, offsetY, minX, rowY + lineHeight, anchorX - minX, bottomY - rowY - lineHeight, true, true);
     }
 
     private void drawIcon(MobEffectInstance instance, float x, float y, float size) {

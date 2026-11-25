@@ -33,7 +33,8 @@ public final class BindUtils {
                 case GLFW.GLFW_MOUSE_BUTTON_LEFT -> "MouseLeft";
                 case GLFW.GLFW_MOUSE_BUTTON_RIGHT -> "MouseRight";
                 case GLFW.GLFW_MOUSE_BUTTON_MIDDLE -> "MouseMiddle";
-                default -> "Mouse" + extractMouseButton(code);
+                // GLFW 的 3/4 号按键就是鼠标侧键，沿用常见叫法 Mouse4/Mouse5
+                default -> "Mouse" + (extractMouseButton(code) + 1);
             };
         }
         String name = GLFW.glfwGetKeyName(code, 0);

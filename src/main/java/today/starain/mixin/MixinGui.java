@@ -22,6 +22,8 @@ import today.starain.utils.render.shader.impl.KawaseBlur;
 import today.starain.utils.client.ChatHudRenderer;
 import today.starain.utils.render.skia.Skia;
 import today.starain.utils.render.skia.context.SkiaContext;
+import today.starain.module.impl.render.Glow;
+import today.starain.ui.HudDrag;
 
 @Mixin(Gui.class)
 public class MixinGui {
@@ -47,7 +49,7 @@ public class MixinGui {
             if (HUD.isBlurEnabled()) {
                 KawaseBlur.INSTANCE.draw(HUD.getBlurRadius(), HUD.getBlurIterations());
             }
-            today.starain.module.impl.render.Glow.flushHud();
+            Glow.flushHud();
             SkiaContext.draw((context) -> {
                 Skia.save();
                 Skia.scale((float) Minecraft.getInstance().getWindow().getGuiScale());
@@ -84,6 +86,7 @@ public class MixinGui {
 
                 ChatHudRenderer.renderPanel();
                 Starain.getInstance().getEventManager().call(new RenderSkiaEvent(guiGraphics, partialTick));
+                HudDrag.renderOverlay();
                 Skia.restore();
             });
         } catch (Throwable e) {

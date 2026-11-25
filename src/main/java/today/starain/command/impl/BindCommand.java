@@ -79,7 +79,9 @@ public final class BindCommand extends Command {
     private int parseDynamicKey(String normalized, String upper) {
         if (upper.startsWith("MOUSE") && upper.length() > 5) {
             try {
-                return BindUtils.mouseCode(Integer.parseInt(upper.substring(5)));
+                int number = Integer.parseInt(upper.substring(5));
+                // Mouse1 = 左键 … Mouse4/Mouse5 = 侧键，与 BindUtils.getBindName 对应
+                return number < 1 ? Integer.MIN_VALUE : BindUtils.mouseCode(number - 1);
             } catch (NumberFormatException ignored) {
                 return Integer.MIN_VALUE;
             }

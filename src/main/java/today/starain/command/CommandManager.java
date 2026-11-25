@@ -11,6 +11,15 @@ import org.lwjgl.glfw.GLFW;
 import today.starain.Starain;
 import today.starain.command.impl.BindCommand;
 import today.starain.command.impl.ConfigCommand;
+import today.starain.command.impl.FriendCommand;
+import today.starain.command.impl.BindsCommand;
+import today.starain.command.impl.ClearCommand;
+import today.starain.command.impl.SayCommand;
+import today.starain.command.impl.ServerInfoCommand;
+import today.starain.utils.player.FriendManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import today.starain.command.impl.ToggleCommand;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.ChatEvent;
@@ -41,7 +50,8 @@ public final class CommandManager {
     }
 
     private void load() {
-        addCommand(new BindCommand(), new ToggleCommand(), new ConfigCommand());
+        addCommand(new BindCommand(), new ToggleCommand(), new ConfigCommand(), new FriendCommand(),
+                new BindsCommand(), new SayCommand(), new ClearCommand(), new ServerInfoCommand());
     }
 
     private void loadDispatcher() {
@@ -51,6 +61,16 @@ public final class CommandManager {
         registerToggleCommand("t");
         registerConfigCommand("config");
         registerConfigCommand("cfg");
+        registerFriendCommand("friend");
+        registerFriendCommand("f");
+        for (String simple : List.of("binds", "keybinds", "clear", "serverinfo", "si")) {
+            dispatcher.register(literal(simple).executes(context -> 1));
+        }
+        dispatcher.register(literal("say")
+                .then(RequiredArgumentBuilder
+                        .<SharedSuggestionProvider, String>argument("message", StringArgumentType.greedyString())
+                        .executes(context -> 1))
+                .executes(context -> 1));
         for (ClientModule module : Starain.getInstance().getModuleManager().getModules()) {
             registerModuleCommand(module);
         }
@@ -116,6 +136,43 @@ public final class CommandManager {
                 .executes(context -> 1));
     }
 
+    private void registerFriendCommand(String name) {
+        dispatcher.register(literal(name)
+                .then(RequiredArgumentBuilder
+                        .<SharedSuggestionProvider, String>argument("action", StringArgumentType.word())
+                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(List.of("add", "remove", "toggle", "list", "clear"), builder))
+                        .then(RequiredArgumentBuilder
+                                .<SharedSuggestionProvider, String>argument("name", StringArgumentType.word())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(friendSuggestions(builder), builder))
+                                .executes(context -> 1))
+                        .executes(context -> 1))
+                .executes(context -> 1));
+    }
+
+    // remove 提示已有好友，其余提示在线玩家
+    private List<String> friendSuggestions(SuggestionsBuilder builder) {
+        String[] parts = builder.getInput().trim().split("\\s+");
+        String action = parts.length >= 2 ? parts[1].toLowerCase() : "";
+        if (action.equals("remove") || action.equals("del")) {
+            return new ArrayList<>(FriendManager.getFriends());
+        }
+        List<String> names = new ArrayList<>();
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        if (connection != null) {
+            for (PlayerInfo info : connection.getOnlinePlayers()) {
+                String playerName = info.getProfile().getName();
+                if (Minecraft.getInstance().player != null && playerName.equals(Minecraft.getInstance().player.getGameProfile().getName())) {
+                    continue;
+                }
+                if (action.equals("add") && FriendManager.isFriend(playerName)) {
+                    continue;
+                }
+                names.add(playerName);
+            }
+        }
+        return names;
+    }
+
     private List<String> configSuggestions() {
         List<String> suggestions = new ArrayList<>(List.of("latest"));
         File[] files = Wrapper.resolveConfigFolder().listFiles((dir, fileName) -> fileName.endsWith(".json"));
@@ -147,7 +204,7 @@ public final class CommandManager {
 
     private List<String> keySuggestions() {
         List<String> suggestions = new ArrayList<>(List.of(
-                "None", "MouseLeft", "MouseRight", "MouseMiddle",
+                "None", "MouseLeft", "MouseRight", "MouseMiddle", "Mouse4", "Mouse5",
                 "LShift", "RShift", "LCtrl", "RCtrl", "LAlt", "RAlt",
                 "Space", "Enter", "Esc", "Delete", "Backspace", "Tab",
                 "Up", "Down", "Left", "Right"
@@ -175,6 +232,18 @@ public final class CommandManager {
         }
 
         String commandName = args[0].substring(PREFIX.length());
+
+        // .say：把消息改写成参数原文后放行，由 MixinClientPacketListener 跳过二次拦截直接发给服务器
+        if (commandName.equalsIgnoreCase("say")) {
+            String text = SayCommand.extract(message);
+            if (text.isEmpty()) {
+                ChatUtils.addChatMessage("usage: .say <message>");
+                event.setCancelled(true);
+            } else {
+                event.setMessage(text);
+            }
+            return;
+        }
         for (Command command : commands) {
             if (command.getName().equalsIgnoreCase(commandName)) {
                 command.onCommand(args);

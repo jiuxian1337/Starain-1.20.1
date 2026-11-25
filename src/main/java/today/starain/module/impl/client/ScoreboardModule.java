@@ -30,6 +30,7 @@ import java.awt.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import today.starain.ui.HudDrag;
 
 public class ScoreboardModule extends ClientModule {
 
@@ -38,10 +39,10 @@ public class ScoreboardModule extends ClientModule {
     private static int vanillaLineCounter;
     // Custom Render 关掉后走原版计分板，X/Y/Render Score 只对自绘模式生效，靠可见性隐藏。
     private final BooleanValue customRender = new BooleanValue("Custom Render", true, this);
-    private final NumberValue x = new NumberValue("X", 0, 5000, 10, 1, this, customRender::get);
-    private final NumberValue y = new NumberValue("y", 0, 1000, 150, 1, this, customRender::get);
+    private final NumberValue x = new NumberValue("X", 0, 5000, 10, 1, this, () -> false);
+    private final NumberValue y = new NumberValue("y", 0, 1000, 150, 1, this, () -> false);
     private final BooleanValue renderScore = new BooleanValue("Render Score", false, this, customRender::get);
-    private final today.starain.value.impl.NumberValue scale = new today.starain.value.impl.NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
+    private final NumberValue scale = new NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final BooleanValue replaceIP = new BooleanValue("Replace Server IP", true, this);
 
     public ScoreboardModule() {
@@ -99,11 +100,11 @@ public class ScoreboardModule extends ClientModule {
 
     @EventTarget
     public void onRender(RenderSkiaEvent event) {
-        today.starain.utils.render.skia.Skia.beginHudScale(x.get().floatValue(), y.get().floatValue(), scale.get().floatValue());
+        Skia.beginHudScale(x.get().floatValue(), y.get().floatValue(), scale.get().floatValue());
         try {
             renderScaled(event);
         } finally {
-            today.starain.utils.render.skia.Skia.endHudScale();
+            Skia.endHudScale();
         }
     }
 
@@ -144,6 +145,7 @@ public class ScoreboardModule extends ClientModule {
             float bgWidth = 5f + maxLineWidth + 5f;
             float bgHeight = 5f + lineHeight + titleGap + lineHeight * scoreDisplayData.size() + 5f;
 
+            HudDrag.report(this, x, y, x.get().floatValue(), y.get().floatValue(), bgWidth, bgHeight);
             Skia.drawBlur(x.get().floatValue(), y.get().floatValue(), bgWidth, bgHeight, 6f);
             Skia.drawShadow(x.get().floatValue(), y.get().floatValue(), bgWidth, bgHeight, 6f);
             Skia.drawRoundedRect(x.get().floatValue(), y.get().floatValue(), bgWidth, bgHeight, 6f, Design.BACKGROUND_COLOR);

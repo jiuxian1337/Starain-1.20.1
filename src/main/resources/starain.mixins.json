@@ -13,6 +13,9 @@
     "client": [
         "MixinCamera",
         "MixinChatComponent",
+        "MixinChestBlockEntity",
+        "MixinContainerScreen",
+        "MixinEnderChestBlockEntity",
         "MixinChatScreen",
         "MixinClientLevel",
         "MixinClientPacketListener",

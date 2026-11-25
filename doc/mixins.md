@@ -51,6 +51,8 @@
 | `MixinChatScreen` | `render` 的 `fill`、`EditBox.render`、`mouseScrolled` | 自定义输入框与滚动 |
 | `MixinCommandSuggestions` / `MixinSuggestionsList` | `render` | 聊天命令补全的定位与绘制 |
 | `MixinJoinMultiplayerScreen` / `MixinScreenKeyForJoin` / `MixinScreenJoiningOverlay` | `Screen` / `JoinMultiplayerScreen` / `ConnectScreen` / `ReceivingLevelScreen` | 目前为空壳占位（保留 mixin 注册以便后续扩展） |
+| `MixinContainerScreen` | `render` HEAD（可取消） | ChestStealer 静默模式：取消原版箱子界面，改画毛玻璃面板 |
+| `MixinChestBlockEntity` / `MixinEnderChestBlockEntity` | `getOpenNess` HEAD | ChestStealer 静默模式下目标箱子返回 0，去掉开盖动画 |
 
 ## 旋转系统（多 mixin 协作）
 

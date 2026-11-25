@@ -19,6 +19,7 @@ import today.starain.module.impl.misc.AntiBot;
 import today.starain.module.impl.misc.Target;
 import today.starain.module.impl.misc.Teams;
 import today.starain.module.impl.player.Scaffold;
+import today.starain.utils.player.FriendManager;
 import today.starain.utils.rotation.RayCastUtil;
 import today.starain.utils.rotation.Rotation;
 import today.starain.utils.rotation.RotationManager;
@@ -68,6 +69,7 @@ public class KillAura extends ClientModule {
                             && (attackInvisible.get() || !(entity instanceof Player && entity.isInvisible()))
                             && !Teams.isSameTeam(entity)
                             && !AntiBot.isBot(entity)
+                            && !FriendManager.isFriend(entity)
                             && RotationUtils.getDistance(entity) <= aimRange.get().floatValue()
                             && Mth.wrapDegrees(mc.player.getXRot() - RotationUtils.calculate(entity).getYaw()) <= fov.get().intValue();
                     return b;

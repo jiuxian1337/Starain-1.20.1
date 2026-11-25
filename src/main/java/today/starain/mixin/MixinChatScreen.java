@@ -14,7 +14,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import today.starain.module.impl.client.HUD;
+import today.starain.ui.HudDrag;
 import today.starain.utils.client.ChatHudRenderer;
+import today.starain.module.impl.render.Chat;
 
 @Mixin(ChatScreen.class)
 public class MixinChatScreen {
@@ -34,7 +36,7 @@ public class MixinChatScreen {
             ChatHudRenderer.pushInput(y1, y2, Minecraft.getInstance().font.width(input.getValue()));
             return;
         }
-        if (today.starain.module.impl.render.Chat.isChatBackgroundEnabled()) {
+        if (Chat.isChatBackgroundEnabled()) {
             guiGraphics.fill(x1, y1, x2, y2, color);
         }
     }
@@ -52,6 +54,13 @@ public class MixinChatScreen {
         guiGraphics.pose().translate(ChatHudRenderer.MARGIN, -ChatHudRenderer.MARGIN, 0.0f);
         box.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.pose().popPose();
+    }
+
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void starain$hudDrag(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        if (HudDrag.mouseClicked(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+        }
     }
 
     @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)

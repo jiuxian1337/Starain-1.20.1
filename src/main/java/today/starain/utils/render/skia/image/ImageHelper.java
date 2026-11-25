@@ -15,6 +15,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.io.IOUtils;
 
 public class ImageHelper {
 
@@ -78,7 +79,7 @@ public class ImageHelper {
         if (!images.containsKey(file.getName())) {
 
             try {
-                byte[] encoded = org.apache.commons.io.IOUtils.toByteArray(new FileInputStream(file));
+                byte[] encoded = IOUtils.toByteArray(new FileInputStream(file));
                 images.put(file.getName(), Image.makeDeferredFromEncodedBytes(encoded));
                 return true;
             } catch (IOException e) {

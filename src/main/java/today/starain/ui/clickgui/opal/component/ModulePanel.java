@@ -29,6 +29,8 @@ public final class ModulePanel extends OpalComponent {
     @Setter
     private int moduleIndex;
     private boolean expanded, selectingBind;
+    // 进入绑定模式的时间，冷却期内忽略按键，避免把按住的 Tab 直接绑上
+    private long bindStart;
 
     public ModulePanel(ClientModule module) {
         this.module = module;
@@ -151,7 +153,10 @@ public final class ModulePanel extends OpalComponent {
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
         if (selectingBind) {
-            module.setKey(BindUtils.mouseCode(button));
+            // 左键取消绑定选择，其余按键（右键/中键/侧键 Mouse4、Mouse5…）直接绑定
+            if (button != 0) {
+                module.setKey(BindUtils.mouseCode(button));
+            }
             selectingBind = false;
             return;
         }
@@ -161,11 +166,18 @@ public final class ModulePanel extends OpalComponent {
             switch (button) {
                 case 0 -> module.toogle();
                 case 1 -> {
-                    if (propertyProvider.isHasProperties()) {
+                    // 按住 Tab 查看绑定时右键进入绑定模式
+                    if (OpalClickGUI.displayingBinds) {
+                        selectingBind = true;
+                        bindStart = System.currentTimeMillis();
+                    } else if (propertyProvider.isHasProperties()) {
                         expanded = !expanded;
                     }
                 }
-                case 2 -> selectingBind = true;
+                case 2 -> {
+                    selectingBind = true;
+                    bindStart = System.currentTimeMillis();
+                }
             }
         }
 
@@ -175,6 +187,7 @@ public final class ModulePanel extends OpalComponent {
     @Override
     public void keyPressed(int key) {
         if (selectingBind) {
+            if (key == 258 || System.currentTimeMillis() - bindStart < 300L) return;
             module.setKey(key == 256 ? 0 : BindUtils.keyboardCode(key));
             selectingBind = false;
             return;

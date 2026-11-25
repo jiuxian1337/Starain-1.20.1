@@ -26,6 +26,7 @@ import today.starain.value.impl.NumberValue;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import today.starain.utils.render.skia.Skia;
 
 public class Glow extends ClientModule {
 
@@ -38,6 +39,7 @@ public class Glow extends ClientModule {
     private final NumberValue strength = new NumberValue("Strength", 0.1, 3.0, 1.0, 0.1, this);
     private final NumberValue spread = new NumberValue("Color Spread", 1.0, 200.0, 50.0, 1.0, this, syncColor::get);
     private final ModeValue blend = new ModeValue("Blend", "Normal", new String[]{"Normal", "Additive"}, this);
+    private final BooleanValue hudSync = new BooleanValue("HUD Sync", true, this);
     private final BooleanValue innerGlow = new BooleanValue("Inner Glow", true, this);
     private final BooleanValue antiAliasing = new BooleanValue("Anti-Aliasing", true, this);
     private final BooleanValue useTarget = new BooleanValue("Use Target", false, this);
@@ -127,8 +129,8 @@ public class Glow extends ClientModule {
         if (alpha <= 0.004F) {
             return;
         }
-        float s = today.starain.utils.render.skia.Skia.hudScale();
-        float[] rect = {today.starain.utils.render.skia.Skia.hudX(x), today.starain.utils.render.skia.Skia.hudY(y),
+        float s = Skia.hudScale();
+        float[] rect = {Skia.hudX(x), Skia.hudY(y),
                 width * s, height * s, radius * s, Math.min(alpha, 1.0F)};
         if (horizontal) {
             hudRectsHorizontal.add(rect);
@@ -160,7 +162,7 @@ public class Glow extends ClientModule {
         Palette palette = module.buildHudPalette(horizontal);
         OutlineGlow.INSTANCE.drawRects(rects, palette.colors(), palette.stops(), palette.alpha(),
                 module.radius.get().floatValue(), module.strength.get().floatValue(),
-                module.antiAliasing.get(), module.blend.isMode("Additive"), module.innerGlow.get(), !horizontal);
+                module.antiAliasing.get(), module.hudSync.get() && module.blend.isMode("Additive"), module.innerGlow.get(), !horizontal);
     }
 
     private Palette buildHudPalette(boolean horizontal) {
@@ -208,6 +210,12 @@ public class Glow extends ClientModule {
             colors[i * 3 + 2] = stop.getBlue() / 255.0F;
         }
         return new Palette(colors, stops, alpha);
+    }
+
+    /** Glow 开启、Blend 为 Additive 且勾选 HUD Sync 时，HUD 元素同步使用 Glow 的发光参数。 */
+    public static boolean additiveSync() {
+        Glow module = get();
+        return module != null && module.isEnabled() && module.hudSync.get() && module.blend.isMode("Additive");
     }
 
     private static Glow get() {

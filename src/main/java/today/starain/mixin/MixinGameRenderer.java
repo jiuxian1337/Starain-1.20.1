@@ -9,14 +9,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import today.starain.Starain;
 import today.starain.event.impl.RenderWorldEvent;
 import today.starain.module.impl.render.WorldColor;
+import net.minecraft.client.Camera;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import today.starain.module.impl.render.Zoom;
 
 @Mixin(GameRenderer.class)
 public class MixinGameRenderer {
 
     @Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
-    private void starain$zoom(net.minecraft.client.Camera camera, float partialTicks, boolean useFovSetting,
-                              org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Double> cir) {
-        double divisor = today.starain.module.impl.render.Zoom.fovDivisor();
+    private void starain$zoom(Camera camera, float partialTicks, boolean useFovSetting,
+                              CallbackInfoReturnable<Double> cir) {
+        double divisor = Zoom.fovDivisor();
         if (divisor != 1.0) {
             cir.setReturnValue(cir.getReturnValue() / divisor);
         }

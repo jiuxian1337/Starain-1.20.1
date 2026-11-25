@@ -42,12 +42,26 @@ import today.starain.utils.rotation.RotationManager;
 import today.starain.utils.rotation.RotationUtils;
 import today.starain.value.impl.BooleanValue;
 import today.starain.value.impl.ColorValue;
+import today.starain.module.impl.render.Glow;
 import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import io.github.humbleui.skija.FilterBlurMode;
+import io.github.humbleui.skija.Font;
+import io.github.humbleui.skija.MaskFilter;
+import io.github.humbleui.skija.Paint;
+import io.github.humbleui.skija.PaintMode;
+import io.github.humbleui.skija.Path;
+import today.starain.event.impl.RenderSkiaEvent;
+import today.starain.ui.Design;
+import today.starain.ui.HudDrag;
+import today.starain.utils.player.InventoryUtils;
+import today.starain.utils.render.skia.Skia;
+import today.starain.utils.render.skia.font.Fonts;
+import today.starain.utils.render.skia.font.Icon;
 
 public class Scaffold extends ClientModule {
     private static final List<Block> BLACKLISTED_BLOCKS = List.of(
@@ -121,11 +135,12 @@ public class Scaffold extends ClientModule {
     private final NumberValue tellyTick = new NumberValue("TellyTicks", 0.0, 6.0, 1.0, 1.0, this, telly::get);
     private final BooleanValue safeWalk = new BooleanValue("SafeWalk", false, this, () -> !telly.get());
     private final NumberValue edgeDist = new NumberValue("Edge Dist", 0, 1, 0.1, 0.01, this, () -> safeWalk.get() && !telly.get());
-    private final ModeValue counter = new ModeValue("Counter", "Material", new String[]{"None", "Material"}, this);
-    private final NumberValue counterX = new NumberValue("Counter X", 0, 1000, 420, 1, this, () -> counter.isMode("Material"));
-    private final NumberValue counterY = new NumberValue("Counter Y", 0, 1000, 300, 1, this, () -> counter.isMode("Material"));
-    private final NumberValue counterScale = new NumberValue("Counter Scale", 0.5, 2.0, 1.0, 0.05, this, () -> counter.isMode("Material"));
-    private float counterSpeed, counterPhase;
+    private final ModeValue counter = new ModeValue("Counter", "Material", new String[]{"None", "Material", "Pill", "Ring", "Bar", "Minimal"}, this);
+    private final NumberValue counterX = new NumberValue("Counter X", 0, 1000, 420, 1, this, () -> false);
+    private final NumberValue counterY = new NumberValue("Counter Y", 0, 1000, 300, 1, this, () -> false);
+    private final BooleanValue counterGlow = new BooleanValue("Counter Glow", false, this, () -> !counter.isMode("None") && !counter.isMode("Minimal"));
+    private final NumberValue counterScale = new NumberValue("Counter Scale", 0.5, 2.0, 1.0, 0.05, this, () -> !counter.isMode("None"));
+    private float counterSpeed, counterPhase, counterFill;
     private int airTick;
     private int yLevel;
     private BlockPos blockPos;
@@ -734,45 +749,62 @@ public class Scaffold extends ClientModule {
     }
 
     @EventTarget
-    public void onRenderCounter(today.starain.event.impl.RenderSkiaEvent event) {
-        if (mc.player == null || !counter.isMode("Material")) return;
-        final float w = 140.0f, h = 46.0f, r = 10.0f;
+    public void onRenderCounter(RenderSkiaEvent event) {
+        if (mc.player == null || counter.isMode("None")) return;
         float x = counterX.get().floatValue(), y = counterY.get().floatValue();
         Color accent = Theme.accent(0);
         Color soft = new Color(200, 200, 205);
-        int blocks = today.starain.utils.player.InventoryUtils.getBlockCountInInventory();
+        int blocks = InventoryUtils.getBlockCountInInventory();
         int cap = Math.max(64, (int) Math.ceil(blocks / 64.0) * 64);
         double bps = mc.player.getDeltaMovement().horizontalDistance() * 20.0;
         // 平滑速度，驱动波浪的振幅与流速
         counterSpeed += (float) ((Math.min(bps, 12.0) / 12.0 - counterSpeed) * 0.15);
         counterPhase += 0.05f + counterSpeed * 0.35f;
+        counterFill += ((float) blocks / cap - counterFill) * 0.15f;
+        if (!counter.isMode("Material")) {
+            Skia.beginHudScale(x, y, counterScale.get().floatValue());
+            try {
+                switch (counter.get()) {
+                    case "Pill" -> drawCounterPill(x, y, blocks, bps, accent, soft);
+                    case "Ring" -> drawCounterRing(x, y, blocks, cap, bps, accent, soft);
+                    case "Bar" -> drawCounterBar(x, y, blocks, cap, bps, accent, soft);
+                    default -> drawCounterMinimal(x, y, blocks, bps, accent);
+                }
+            } finally {
+                Skia.endHudScale();
+            }
+            return;
+        }
+        final float w = 140.0f, h = 46.0f, r = 10.0f;
 
-        today.starain.utils.render.skia.Skia.beginHudScale(x, y, counterScale.get().floatValue());
-        today.starain.utils.render.skia.Skia.drawShadow(x, y, w, h, r);
-        today.starain.utils.render.skia.Skia.drawBlur(x, y, w, h, r);
-        today.starain.utils.render.skia.Skia.drawRoundedRect(x, y, w, h, r, today.starain.ui.Design.BACKGROUND_COLOR);
+        Skia.beginHudScale(x, y, counterScale.get().floatValue());
+        HudDrag.report(this, counterX, counterY, x, y, w, h);
+        if (counterGlow.get()) Glow.queueHud(x, y, w, h, r, 1.0f, true);
+        Skia.drawShadow(x, y, w, h, r);
+        Skia.drawBlur(x, y, w, h, r);
+        Skia.drawRoundedRect(x, y, w, h, r, Design.BACKGROUND_COLOR);
 
-        io.github.humbleui.skija.Font title = today.starain.utils.render.skia.font.Fonts.getBold(8.0f);
-        io.github.humbleui.skija.Font big = today.starain.utils.render.skia.font.Fonts.getBold(12.0f);
-        io.github.humbleui.skija.Font small = today.starain.utils.render.skia.font.Fonts.getMedium(6.5f);
-        io.github.humbleui.skija.Font icon = today.starain.utils.render.skia.font.Fonts.getIconFill(9.0f);
-        today.starain.utils.render.skia.Skia.drawText(today.starain.utils.render.skia.font.Icon.DEPLOYED_CODE, x + 9.0f, y + 7.5f, accent, icon);
-        today.starain.utils.render.skia.Skia.drawText("Blocks", x + 21.0f, y + 8.0f, today.starain.ui.Design.TEXT_COLOR, title);
-        today.starain.utils.render.skia.Skia.drawText(String.format(java.util.Locale.ROOT, "%.2f BPS", bps), x + 9.0f, y + 19.0f, soft, small);
+        Font title = Fonts.getBold(8.0f);
+        Font big = Fonts.getBold(12.0f);
+        Font small = Fonts.getMedium(6.5f);
+        Font icon = Fonts.getIconFill(9.0f);
+        Skia.drawText(Icon.DEPLOYED_CODE, x + 9.0f, y + 7.5f, accent, icon);
+        Skia.drawText("Blocks", x + 21.0f, y + 8.0f, Design.TEXT_COLOR, title);
+        Skia.drawText(String.format(java.util.Locale.ROOT, "%.2f BPS", bps), x + 9.0f, y + 19.0f, soft, small);
 
         String capText = "/ " + cap;
-        float capW = today.starain.utils.render.skia.Skia.getTextWidth(capText, small);
+        float capW = Skia.getTextWidth(capText, small);
         String count = String.valueOf(blocks);
-        float cw = today.starain.utils.render.skia.Skia.getTextWidth(count, big);
-        today.starain.utils.render.skia.Skia.drawText(capText, x + w - 9.0f - capW, y + 13.0f, soft, small);
-        today.starain.utils.render.skia.Skia.drawText(count, x + w - 12.0f - capW - cw, y + 9.0f, accent, big);
+        float cw = Skia.getTextWidth(count, big);
+        Skia.drawText(capText, x + w - 9.0f - capW, y + 13.0f, soft, small);
+        Skia.drawText(count, x + w - 12.0f - capW - cw, y + 9.0f, accent, big);
 
         float amp = 0.4f + counterSpeed * 3.2f;
         float freq = 14.0f - counterSpeed * 6.0f;
         float baseY = y + h - 9.0f;
-        try (io.github.humbleui.skija.Path wave = new io.github.humbleui.skija.Path();
-             io.github.humbleui.skija.Paint glowPaint = new io.github.humbleui.skija.Paint();
-             io.github.humbleui.skija.Paint linePaint = new io.github.humbleui.skija.Paint()) {
+        try (Path wave = new Path();
+             Paint glowPaint = new Paint();
+             Paint linePaint = new Paint()) {
             float len = w - 18.0f;
             for (float px = 0; px <= len; px += 1.5f) {
                 // 两端收敛，避免波浪顶到圆角
@@ -781,19 +813,109 @@ public class Scaffold extends ClientModule {
                 if (px == 0) wave.moveTo(x + 9.0f, py); else wave.lineTo(x + 9.0f + px, py);
             }
             glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 120).getRGB());
-            glowPaint.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+            glowPaint.setMode(PaintMode.STROKE);
             glowPaint.setStrokeWidth(3.5f);
             glowPaint.setAntiAlias(true);
-            glowPaint.setMaskFilter(io.github.humbleui.skija.MaskFilter.makeBlur(io.github.humbleui.skija.FilterBlurMode.NORMAL, 2.5f));
+            glowPaint.setMaskFilter(MaskFilter.makeBlur(FilterBlurMode.NORMAL, 2.5f));
             linePaint.setColor(accent.getRGB());
-            linePaint.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+            linePaint.setMode(PaintMode.STROKE);
             linePaint.setStrokeWidth(1.3f);
             linePaint.setAntiAlias(true);
-            today.starain.utils.render.skia.Skia.getCanvas().drawPath(wave, glowPaint);
-            today.starain.utils.render.skia.Skia.getCanvas().drawPath(wave, linePaint);
+            Skia.getCanvas().drawPath(wave, glowPaint);
+            Skia.getCanvas().drawPath(wave, linePaint);
         }
-        today.starain.utils.render.skia.Skia.endHudScale();
+        Skia.endHudScale();
     }
+    // Pill：单行胶囊，方块图标 + 数量，右侧小速度波形
+    private void drawCounterPill(float x, float y, int blocks, double bps, Color accent, Color soft) {
+        Font big = Fonts.getBold(9.0f);
+        Font small = Fonts.getMedium(6.0f);
+        Font icon = Fonts.getIconFill(9.0f);
+        String count = String.valueOf(blocks);
+        String bpsText = String.format(java.util.Locale.ROOT, "%.1f", bps);
+        float h = 20.0f, r = h / 2.0f;
+        float w = 24.0f + Skia.getTextWidth("000", big) + 10.0f
+                + Skia.getTextWidth("00.0 BPS", small) + 34.0f;
+        HudDrag.report(this, counterX, counterY, x, y, w, h);
+        if (counterGlow.get()) Glow.queueHud(x, y, w, h, r, 1.0f, true);
+        Skia.drawShadow(x, y, w, h, r);
+        Skia.drawBlur(x, y, w, h, r);
+        Skia.drawRoundedRect(x, y, w, h, r, Design.BACKGROUND_COLOR);
+        Skia.drawCircle(x + r, y + r, 6.5f, new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 55));
+        Skia.drawText(Icon.DEPLOYED_CODE, x + r - 4.5f, y + r - 4.5f, accent, icon);
+        Skia.drawText(count, x + 22.0f, y + 5.5f, Design.TEXT_COLOR, big);
+        float bx = x + 24.0f + Skia.getTextWidth("000", big) + 4.0f;
+        Skia.drawText(bpsText + " BPS", bx, y + 7.5f, soft, small);
+        drawCounterWave(x + w - 32.0f, y + r, 24.0f, 0.3f + counterSpeed * 2.6f, accent, 1.1f);
+    }
+
+    // Ring：圆环表示剩余比例，环内数字，环右侧 BPS 和速度波
+    private void drawCounterRing(float x, float y, int blocks, int cap, double bps, Color accent, Color soft) {
+        Font big = Fonts.getBold(9.0f);
+        Font title = Fonts.getBold(7.5f);
+        Font small = Fonts.getMedium(6.0f);
+        float w = 108.0f, h = 40.0f, r = 10.0f;
+        HudDrag.report(this, counterX, counterY, x, y, w, h);
+        if (counterGlow.get()) Glow.queueHud(x, y, w, h, r, 1.0f, true);
+        Skia.drawShadow(x, y, w, h, r);
+        Skia.drawBlur(x, y, w, h, r);
+        Skia.drawRoundedRect(x, y, w, h, r, Design.BACKGROUND_COLOR);
+        float cx = x + 20.0f, cy = y + h / 2.0f, rr = 13.0f;
+        Skia.drawCircle(cx, cy, rr, 2.5f, new Color(255, 255, 255, 30));
+        Skia.drawArc(cx, cy, rr, 0.0f, 360.0f * Math.max(0.0f, Math.min(1.0f, counterFill)), 2.5f, accent);
+        Skia.drawFullCenteredTextPlain(String.valueOf(blocks), cx, cy, Design.TEXT_COLOR, big);
+        Skia.drawText("Blocks", x + 40.0f, y + 8.0f, Design.TEXT_COLOR, title);
+        Skia.drawText(String.format(java.util.Locale.ROOT, "%.2f BPS  / %d", bps, cap), x + 40.0f, y + 18.0f, soft, small);
+        drawCounterWave(x + 40.0f, y + 31.0f, w - 50.0f, 0.3f + counterSpeed * 2.4f, accent, 1.2f);
+    }
+
+    // Bar：横向进度条容量 + 下方速度波形，偏信息面板风格
+    private void drawCounterBar(float x, float y, int blocks, int cap, double bps, Color accent, Color soft) {
+        Font title = Fonts.getBold(7.5f);
+        Font small = Fonts.getMedium(6.0f);
+        float w = 130.0f, h = 25.0f, r = 7.0f;
+        HudDrag.report(this, counterX, counterY, x, y, w, h);
+        if (counterGlow.get()) Glow.queueHud(x, y, w, h, r, 1.0f, true);
+        Skia.drawShadow(x, y, w, h, r);
+        Skia.drawBlur(x, y, w, h, r);
+        Skia.drawRoundedRect(x, y, w, h, r, Design.BACKGROUND_COLOR);
+        Skia.drawText("Blocks", x + 8.0f, y + 6.0f, Design.TEXT_COLOR, title);
+        String right = blocks + " / " + cap;
+        Skia.drawText(right, x + w - 8.0f - Skia.getTextWidth(right, small), y + 7.0f, accent, small);
+        float barW = w - 16.0f, fill = barW * Math.max(0.0f, Math.min(1.0f, counterFill));
+        Skia.drawRoundedRect(x + 8.0f, y + 16.0f, barW, 3.0f, 1.5f, new Color(255, 255, 255, 30));
+        Skia.drawThemeGradientRect(x + 8.0f, y + 16.0f, Math.max(3.0f, fill), 3.0f, x + 8.0f, x + 8.0f + barW, 6);
+    }
+
+    // Minimal：无背景，大号数字 + 小字 BPS，带阴影
+    private void drawCounterMinimal(float x, float y, int blocks, double bps, Color accent) {
+        Font big = Fonts.getBold(14.0f);
+        Font small = Fonts.getMedium(6.5f);
+        String count = String.valueOf(blocks);
+        float cw = Skia.getTextWidth(count, big);
+        float w = Math.max(cw, 50.0f) + 4.0f, h = 24.0f;
+        HudDrag.report(this, counterX, counterY, x, y, w, h);
+        Skia.drawText(count, x, y, accent, big);
+        Skia.drawText(String.format(java.util.Locale.ROOT, "blocks  %.1f bps", bps), x, y + 17.0f, Design.TEXT_COLOR, small);
+    }
+
+    private void drawCounterWave(float x, float baseY, float len, float amp, Color accent, float stroke) {
+        float freq = 9.0f - counterSpeed * 4.0f;
+        try (Path wave = new Path();
+             Paint linePaint = new Paint()) {
+            for (float px = 0; px <= len; px += 1.0f) {
+                float edge = (float) Math.sin(Math.PI * px / len);
+                float py = baseY + (float) Math.sin(px / freq + counterPhase) * amp * edge;
+                if (px == 0) wave.moveTo(x, py); else wave.lineTo(x + px, py);
+            }
+            linePaint.setColor(accent.getRGB());
+            linePaint.setMode(PaintMode.STROKE);
+            linePaint.setStrokeWidth(stroke);
+            linePaint.setAntiAlias(true);
+            Skia.getCanvas().drawPath(wave, linePaint);
+        }
+    }
+
     @Override
     public String getSuffix() {
         return telly.get() ? "Telly" : snap.get() ? "Snap" : "Normal";

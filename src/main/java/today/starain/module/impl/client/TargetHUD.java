@@ -37,13 +37,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import io.github.humbleui.skija.FilterBlurMode;
+import io.github.humbleui.skija.MaskFilter;
+import io.github.humbleui.skija.PaintMode;
+import io.github.humbleui.skija.PaintStrokeCap;
+import today.starain.module.impl.render.Glow;
+import today.starain.ui.HudDrag;
+import today.starain.utils.render.skia.font.Icon;
 
 public class TargetHUD extends ClientModule {
     private final ModeValue style = new ModeValue("Style", "Default", new String[]{"Default", "Material"}, this);
     private final ModeValue healthBar = new ModeValue("Health Bar", "Solid", new String[]{"Solid", "Wave", "Segment"}, this, () -> style.isMode("Material"));
     private final NumberValue scale = new NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
-    private final NumberValue x = new NumberValue("X", 0, 1000, 300, 1, this);
-    private final NumberValue y = new NumberValue("y", 0, 1000, 300, 1, this);
+    private final NumberValue x = new NumberValue("X", 0, 1000, 300, 1, this, () -> false);
+    private final NumberValue y = new NumberValue("y", 0, 1000, 300, 1, this, () -> false);
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final BooleanValue glow = new BooleanValue("Glow", false, this);
     private final BooleanValue followPlayer = new BooleanValue("Follow Player", false, this);
@@ -55,6 +62,8 @@ public class TargetHUD extends ClientModule {
     private final NumberValue heightRatio = new NumberValue("Height", 0.0, 1.5, 0.8, 0.05, this, followPlayer::get);
     private final Map<Integer, SmoothAnimationTimer> healTimers = new HashMap<>();
     private final Map<Integer, SmoothAnimationTimer> hurtTimers = new HashMap<>();
+    private final Map<Integer, SmoothAnimationTimer> fadeTimers = new java.util.LinkedHashMap<>();
+    private final Map<Integer, SmoothAnimationTimer> slotTimers = new HashMap<>();
     private final SmoothAnimationTimer heal = new SmoothAnimationTimer(20.0F);
     private final SmoothAnimationTimer alpha = new SmoothAnimationTimer(255.0F);
     private final SmoothAnimationTimer hurtAlpha = new SmoothAnimationTimer(0.0F);
@@ -122,16 +131,21 @@ public class TargetHUD extends ClientModule {
             return;
         }
 
+        // 聊天拖拽编辑时始终在固定位置完整显示（无视跟随/多目标），保证可以拖动
+        if (HudDrag.isEditing()) {
+            AbstractClientPlayer preview = target != null && alpha.value >= 1.0f ? target : mc.player;
+            heal.update(true);
+            float health = preview == target ? heal.value : preview.getHealth();
+            drawHud(preview, this.x.get().floatValue(), this.y.get().floatValue(), "Fixed",
+                    255.0f, health, 0.0f);
+            return;
+        }
+
         KillAura killAura = Starain.getInstance().getModuleManager().getModule(KillAura.class);
-        if (multiTarget.get() && killAura != null && killAura.isEnabled() && killAura.isSwitchMode()
-                && KillAura.targets != null && !KillAura.targets.isEmpty()) {
-            healTimers.keySet().removeIf(id -> mc.level == null || mc.level.getEntity(id) == null);
-            hurtTimers.keySet().removeIf(id -> mc.level == null || mc.level.getEntity(id) == null);
-            for (Entity entity : KillAura.targets) {
-                if (entity instanceof AbstractClientPlayer player) {
-                    drawTracked(player, partialTick);
-                }
-            }
+        boolean multiActive = multiTarget.get() && killAura != null && killAura.isEnabled() && killAura.isSwitchMode()
+                && KillAura.targets != null && !KillAura.targets.isEmpty();
+        if (multiTarget.get() && (multiActive || !fadeTimers.isEmpty())) {
+            drawMulti(multiActive, partialTick);
             return;
         }
 
@@ -150,7 +164,43 @@ public class TargetHUD extends ClientModule {
                 alpha.value, heal.value, hurtAlpha.value);
     }
 
-    private void drawTracked(AbstractClientPlayer player, float partialTick) {
+    // 多目标：目标进入时淡入放大，离开时保留最后的实体淡出，槽位平滑移动
+    private void drawMulti(boolean active, float partialTick) {
+        List<Integer> current = new ArrayList<>();
+        if (active) {
+            for (Entity entity : KillAura.targets) {
+                if (entity instanceof AbstractClientPlayer) current.add(entity.getId());
+            }
+        }
+        for (Integer id : current) {
+            fadeTimers.computeIfAbsent(id, key -> new SmoothAnimationTimer(255.0f, 0.0f, 0.25f)).target = 255.0f;
+        }
+        int slot = 0;
+        Iterator<Map.Entry<Integer, SmoothAnimationTimer>> it = fadeTimers.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, SmoothAnimationTimer> entry = it.next();
+            int id = entry.getKey();
+            SmoothAnimationTimer fade = entry.getValue();
+            Entity entity = mc.level == null ? null : mc.level.getEntity(id);
+            if (!current.contains(id)) fade.target = 0.0f;
+            fade.update(true);
+            if (!(entity instanceof AbstractClientPlayer player) || (fade.target == 0.0f && fade.value < 2.0f)) {
+                it.remove();
+                healTimers.remove(id);
+                hurtTimers.remove(id);
+                slotTimers.remove(id);
+                continue;
+            }
+            int index = current.contains(id) ? current.indexOf(id) : slot;
+            SmoothAnimationTimer slotTimer = slotTimers.computeIfAbsent(id, key -> new SmoothAnimationTimer(index * 45.0f));
+            slotTimer.target = index * 45.0f;
+            slotTimer.update(true);
+            drawTracked(player, partialTick, fade.value, slotTimer.value);
+            slot++;
+        }
+    }
+
+    private void drawTracked(AbstractClientPlayer player, float partialTick, float alphaValue, float slotOffset) {
         SmoothAnimationTimer healTimer = healTimers.computeIfAbsent(player.getId(), id -> new SmoothAnimationTimer(player.getHealth()));
         SmoothAnimationTimer hurtTimer = hurtTimers.computeIfAbsent(player.getId(), id -> new SmoothAnimationTimer(0.0F));
         healTimer.target = player.getHealth();
@@ -161,12 +211,11 @@ public class TargetHUD extends ClientModule {
         if (followPlayer.get()) {
             Vector2f screen = projectSide(player, partialTick);
             if (screen == null) return;
-            drawHud(player, screen.x, screen.y, anchorFor(screen), 255.0f, healTimer.value, hurtTimer.value);
+            drawHud(player, screen.x, screen.y, anchorFor(screen), alphaValue, healTimer.value, hurtTimer.value);
             return;
         }
-        int index = KillAura.targets.indexOf(player);
-        drawHud(player, this.x.get().floatValue(), this.y.get().floatValue() + index * 45.0f, "Fixed",
-                255.0f, healTimer.value, hurtTimer.value);
+        drawHud(player, this.x.get().floatValue(), this.y.get().floatValue() + slotOffset, "Fixed",
+                alphaValue, healTimer.value, hurtTimer.value);
     }
 
     private Vector2f projectSide(AbstractClientPlayer player, float partialTick) {
@@ -189,7 +238,9 @@ public class TargetHUD extends ClientModule {
 
     private void drawHud(AbstractClientPlayer target, float baseX, float baseY, String anchor,
                          float alphaValue, float healValue, float hurtValue) {
-        Skia.beginHudScale(baseX, baseY, scale.get().floatValue());
+        // 淡入淡出时附带轻微缩放，避免组件突然出现/消失
+        float pop = 0.88f + 0.12f * Mth.clamp(alphaValue / 255.0f, 0.0f, 1.0f);
+        Skia.beginHudScale(baseX, baseY, scale.get().floatValue() * pop);
         try {
             if (style.isMode("Material")) {
                 drawMaterial(target, baseX, baseY, anchor, alphaValue, healValue, hurtValue);
@@ -230,9 +281,12 @@ public class TargetHUD extends ClientModule {
                 y = baseY;
             }
         }
+        if (anchor.equals("Fixed") && baseY == this.y.get().floatValue()) {
+            HudDrag.report(this, this.x, this.y, x, y, width, height);
+        }
 
         if (glow.get()) {
-            today.starain.module.impl.render.Glow.queueHud(x, y, width, height, 6.0f, alphaValue / 255.0f, true);
+            Glow.queueHud(x, y, width, height, 6.0f, alphaValue / 255.0f, true);
         }
 
         try (Paint layerPaint = new Paint()) {
@@ -392,10 +446,14 @@ public class TargetHUD extends ClientModule {
             case "Left" -> { x = baseX - offset - width; y = baseY - height / 2.0f; }
             default -> { x = baseX; y = baseY; }
         }
+        if (anchor.equals("Fixed") && baseY == this.y.get().floatValue()) {
+            HudDrag.report(this, this.x, this.y, x, y, width, height);
+        }
 
         Color accent = Theme.accent(0);
         float a = alphaValue / 255.0f;
         if (alphaValue >= 75f) {
+            if (glow.get()) Glow.queueHud(x, y, width, height, radius, a, true);
             Skia.drawShadow(x, y, width, height, radius);
             Skia.drawBlur(x, y, width, height, radius);
         }
@@ -432,10 +490,10 @@ public class TargetHUD extends ClientModule {
         Skia.drawText(hp, barX, y + 27.0f, new Color(200, 200, 205), statFont);
         String armor = String.valueOf(target.getArmorValue());
         float armorW = Skia.getTextWidth(armor, statFont);
-        float iconW = Skia.getTextWidth(today.starain.utils.render.skia.font.Icon.SHIELD, icon);
+        float iconW = Skia.getTextWidth(Icon.SHIELD, icon);
         float ax = x + width - pad - 4.0f - armorW;
         Skia.drawText(armor, ax, y + 27.0f, new Color(200, 200, 205), statFont);
-        Skia.drawText(today.starain.utils.render.skia.font.Icon.SHIELD, ax - iconW - 2.0f, y + 26.5f, accent, icon);
+        Skia.drawText(Icon.SHIELD, ax - iconW - 2.0f, y + 26.5f, accent, icon);
         Skia.restore();
 
         if (hitParticles.get()) {
@@ -457,14 +515,14 @@ public class TargetHUD extends ClientModule {
                         if (px == 0) wave.moveTo(barX, py); else wave.lineTo(barX + px, py);
                     }
                     glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 110).getRGB());
-                    glowPaint.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+                    glowPaint.setMode(PaintMode.STROKE);
                     glowPaint.setStrokeWidth(3.0f);
                     glowPaint.setAntiAlias(true);
-                    glowPaint.setMaskFilter(io.github.humbleui.skija.MaskFilter.makeBlur(io.github.humbleui.skija.FilterBlurMode.NORMAL, 1.5f));
+                    glowPaint.setMaskFilter(MaskFilter.makeBlur(FilterBlurMode.NORMAL, 1.5f));
                     line.setColor(accent.getRGB());
-                    line.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+                    line.setMode(PaintMode.STROKE);
                     line.setStrokeWidth(1.4f);
-                    line.setStrokeCap(io.github.humbleui.skija.PaintStrokeCap.ROUND);
+                    line.setStrokeCap(PaintStrokeCap.ROUND);
                     line.setAntiAlias(true);
                     Skia.getCanvas().drawPath(wave, glowPaint);
                     Skia.getCanvas().drawPath(wave, line);
@@ -504,6 +562,7 @@ public class TargetHUD extends ClientModule {
         if (hurt) spawnBurst(effect);
 
         double phaseSpan = 360.0 / themeSpread();
+        boolean glowSync = Glow.additiveSync();
         Iterator<Particle> iterator = effect.particles.iterator();
         while (iterator.hasNext()) {
             Particle particle = iterator.next();
@@ -523,8 +582,12 @@ public class TargetHUD extends ClientModule {
             float drawX = centerX + particle.offsetX;
             float drawY = centerY + particle.offsetY;
             float radius = particle.size * (0.5f + 0.5f * progress);
-            Skia.drawCircle(drawX, drawY, radius * 2.6f,
-                    new Color(base.getRed(), base.getGreen(), base.getBlue(), particleAlpha / 6));
+            if (glowSync) {
+                Glow.queueHud(drawX - radius, drawY - radius, radius * 2.0f, radius * 2.0f, radius, particleAlpha / 255.0f);
+            } else {
+                Skia.drawCircle(drawX, drawY, radius * 2.6f,
+                        new Color(base.getRed(), base.getGreen(), base.getBlue(), particleAlpha / 6));
+            }
             Skia.drawCircle(drawX, drawY, radius,
                     new Color(base.getRed(), base.getGreen(), base.getBlue(), particleAlpha));
         }

@@ -49,6 +49,7 @@ import today.starain.value.impl.NumberValue;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 
 public class Trajectories extends ClientModule {
 
@@ -175,7 +176,7 @@ public class Trajectories extends ClientModule {
 
             path.add(next);
             pos = next;
-            boolean inWater = !mc.level.getFluidState(net.minecraft.core.BlockPos.containing(pos)).isEmpty();
+            boolean inWater = !mc.level.getFluidState(BlockPos.containing(pos)).isEmpty();
             motion = motion.scale(inWater ? 0.6 : sim.drag);
             motion = new Vec3(motion.x, motion.y - sim.gravity, motion.z);
         }

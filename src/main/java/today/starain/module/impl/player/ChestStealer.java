@@ -11,11 +11,16 @@ import today.starain.event.api.Priority;
 import today.starain.event.api.annotations.EventPriority;
 import today.starain.event.api.annotations.EventTarget;
 import today.starain.event.impl.MotionEvent;
+import today.starain.event.impl.PacketEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import today.starain.module.Category;
 import today.starain.module.ClientModule;
 import today.starain.utils.player.InventoryUtils;
 import today.starain.utils.timer.TimerUtils;
 import today.starain.value.impl.BooleanValue;
+import today.starain.value.impl.ModeValue;
 import today.starain.value.impl.NumberValue;
 
 import java.util.Collections;
@@ -32,13 +37,61 @@ public class ChestStealer extends ClientModule {
     private final BooleanValue closeDelay = new BooleanValue("Close Delay", true, this);
     private final NumberValue cDelay = new NumberValue("Close Delay Number", 0, 1000, 150, 1, this, closeDelay::get);
     private final BooleanValue pickEnderChest = new BooleanValue("Ender Chest", false, this);
+    private final ModeValue render = new ModeValue("Render", "Normal", new String[]{"Normal", "Silent"}, this);
     private Screen lastTickScreen;
+
+    private static ChestStealer instance;
+    // 静默模式：最近交互的箱子位置与关闭时间，用于压住开盖动画
+    private static volatile BlockPos silentPos;
+    private static long silentUntil;
+    private final SilentChestRenderer silentRenderer = new SilentChestRenderer();
 
     public ChestStealer() {
         setName("ChestStealer");
         setCategory(Category.PLAYER);
+        instance = this;
     }
 
+    @Override
+    protected void onDisable() {
+        silentPos = null;
+        super.onDisable();
+    }
+
+    private static boolean silentMode() {
+        return instance != null && instance.isEnabled() && instance.render.isMode("Silent");
+    }
+
+    // 由 MixinContainerScreen 调用：静默模式下接管箱子界面渲染
+    public static boolean renderSilent(ContainerScreen screen, GuiGraphics guiGraphics, float partialTick) {
+        if (!silentMode() || !instance.matchesTitle(screen)) return false;
+        silentUntil = System.currentTimeMillis() + 1500L;
+        instance.silentRenderer.render(screen, guiGraphics, partialTick, silentPos);
+        return true;
+    }
+
+    // 由 MixinChestBlockEntity 调用：静默模式下目标箱子保持合盖
+    public static boolean hideLid(BlockPos pos) {
+        BlockPos target = silentPos;
+        if (target == null || !silentMode()) return false;
+        if (!(mc.screen instanceof ContainerScreen) && System.currentTimeMillis() > silentUntil) return false;
+        return Math.abs(pos.getX() - target.getX()) + Math.abs(pos.getY() - target.getY()) + Math.abs(pos.getZ() - target.getZ()) <= 1;
+    }
+
+    @EventTarget
+    public void onPacket(PacketEvent e) {
+        if (e.getType() == EventType.OUTGOING && e.getPacket() instanceof ServerboundUseItemOnPacket packet) {
+            silentPos = packet.getHitResult().getBlockPos();
+        }
+    }
+
+    private boolean matchesTitle(ContainerScreen container) {
+        String chestTitle = container.getTitle().getString();
+        return chestTitle.equals(Component.translatable("container.chest").getString())
+                || chestTitle.equals(Component.translatable("container.chestDouble").getString())
+                || chestTitle.equals("Chest")
+                || this.pickEnderChest.get() && chestTitle.equals(Component.translatable("container.enderchest").getString());
+    }
     public static boolean isWorking() {
         return !timer.delay(3);
     }
@@ -145,6 +198,7 @@ public class ChestStealer extends ClientModule {
                 ChestMenu menu = container.getMenu();
                 if (currentScreen != this.lastTickScreen) {
                     timer.reset();
+                    silentRenderer.reset();
                 } else {
                     String chestTitle = container.getTitle().getString();
                     String chest = Component.translatable("container.chest").getString();
@@ -169,6 +223,7 @@ public class ChestStealer extends ClientModule {
                                 ItemStack stack = menu.getSlot(pSlotId).getItem();
                                 if (isItemUseful(stack) && isBestItemInChest(menu, stack) && timer.delay(nextDelay)) {
                                     mc.gameMode.handleInventoryMouseClick(menu.containerId, pSlotId, 0, ClickType.QUICK_MOVE, mc.player);
+                                    silentRenderer.markTaken(pSlotId);
                                     timer.reset();
                                     break;
                                 }

@@ -36,6 +36,11 @@ import today.starain.utils.wrapper.Wrapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import today.starain.module.impl.render.AlertLog;
+import today.starain.module.impl.render.Chat;
+import today.starain.module.impl.render.FreeLook;
+import today.starain.module.impl.render.HandLightning;
+import today.starain.module.impl.render.Zoom;
 
 public class ModuleManager implements Wrapper {
     private final List<ClientModule> modules = new ArrayList<>();
@@ -54,11 +59,11 @@ public class ModuleManager implements Wrapper {
         modules.add(new Glow());
         modules.add(new ESP2D());
         modules.add(new ItemPhysics());
-        modules.add(new today.starain.module.impl.render.Chat());
-        modules.add(new today.starain.module.impl.render.HandLightning());
-        modules.add(new today.starain.module.impl.render.Zoom());
-        modules.add(new today.starain.module.impl.render.FreeLook());
-        modules.add(new today.starain.module.impl.render.AlertLog());
+        modules.add(new Chat());
+        modules.add(new HandLightning());
+        modules.add(new Zoom());
+        modules.add(new FreeLook());
+        modules.add(new AlertLog());
         modules.add(new ArrayListModule());
         modules.add(new ClickGuiModule());
         modules.add(new Notification());
@@ -80,6 +85,7 @@ public class ModuleManager implements Wrapper {
         modules.add(new Stuck());
         modules.add(new AutoTools());
         modules.add(new ChestStealer());
+        modules.add(new ChestAura());
         modules.add(new InvManager());
         modules.add(new TargetHUD());
         modules.add(new NoFall());
