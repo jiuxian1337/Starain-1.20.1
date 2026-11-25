@@ -56,6 +56,7 @@ public final class ChatHudRenderer {
     private static float inputWidth;
     private static float inputHeight;
     private static boolean inputValid;
+    private static float suggestDim;
 
     private ChatHudRenderer() {
     }
@@ -85,14 +86,16 @@ public final class ChatHudRenderer {
     }
 
     public static void pushInput(int top, int bottom, int textWidth) {
-        inputTargetWidth = Math.min(HUD.getChatHudWidth(), Math.max(90.0f, textWidth + 14.0f));
+        // 默认与聊天面板同宽，输入更长时再加宽
+        float base = panelValid && panelWidth >= 1.0f ? panelWidth : 90.0f;
+        inputTargetWidth = Math.min(Math.max(HUD.getChatHudWidth(), base), Math.max(base, textWidth + 14.0f));
         if (animInputWidth <= 0.0f) {
             animInputWidth = inputTargetWidth;
         }
         inputX = MARGIN;
-        inputY = top - MARGIN;
+        inputY = top - MARGIN - 0.5f;
         inputWidth = animInputWidth;
-        inputHeight = bottom - top;
+        inputHeight = bottom - top + 1.0f;
         inputValid = true;
     }
 
@@ -133,7 +136,7 @@ public final class ChatHudRenderer {
             drawSurface(panelX, panelY, panelWidth, panelHeight);
         }
         if (inputValid && inputWidth >= 1.0f && inputHeight >= 1.0f) {
-            drawSurface(inputX, inputY, inputWidth, inputHeight);
+            drawSurface(inputX, inputY, inputWidth, inputHeight, 3.0f);
         }
         if (suggestionValid) {
             float sx = suggestionMinX - 2.0f;
@@ -147,7 +150,10 @@ public final class ChatHudRenderer {
     }
 
     private static void drawSurface(float x, float y, float width, float height) {
-        float radius = Math.min(6.0f, height / 2.0f);
+        drawSurface(x, y, width, height, Math.min(6.0f, height / 2.0f));
+    }
+
+    private static void drawSurface(float x, float y, float width, float height, float radius) {
         Skia.drawShadow(x, y, width, height, radius);
         Skia.drawBlur(x, y, width, height, radius);
         Skia.drawRoundedRect(x, y, width, height, radius, Design.BACKGROUND_COLOR);
@@ -177,6 +183,9 @@ public final class ChatHudRenderer {
         int lineHeight = (int) (9.0d * (spacing + 1.0d));
         int textOffset = (int) Math.round(-8.0d * (spacing + 1.0d) + 4.0d * spacing);
         float textOpacity = (float) (double) mc.options.chatOpacity().get() * 0.9f + 0.1f;
+        // 命令补全弹出时淡化聊天文本到 10%，突出补全项
+        suggestDim += ((focused && suggestionValid ? 1.0f : 0.0f) - suggestDim) * (1.0f - (float) Math.exp(-delta * 14.0d));
+        textOpacity *= 1.0f - 0.9f * suggestDim;
 
         animInputWidth += (inputTargetWidth - animInputWidth) * factor;
 
@@ -310,3 +319,4 @@ public final class ChatHudRenderer {
         return delta;
     }
 }
+

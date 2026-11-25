@@ -25,6 +25,7 @@ public final class ArrayListModule extends ClientModule {
     private final BooleanValue background = new BooleanValue("Background", true, this);
     private final BooleanValue glow = new BooleanValue("Glow", false, this);
     private final BooleanValue sidebar = new BooleanValue("Sidebar", false, this);
+    private final today.starain.value.impl.NumberValue scale = new today.starain.value.impl.NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final BooleanValue hideRenderModule = new BooleanValue("Hide Render Module", true, this);
 
     public ArrayListModule() {
@@ -34,6 +35,15 @@ public final class ArrayListModule extends ClientModule {
 
     @EventTarget
     public void onRender(RenderSkiaEvent event) {
+        today.starain.utils.render.skia.Skia.beginHudScale(mc.getWindow().getGuiScaledWidth() - this.x.get().floatValue(), this.y.get().floatValue(), scale.get().floatValue());
+        try {
+            renderScaled(event);
+        } finally {
+            today.starain.utils.render.skia.Skia.endHudScale();
+        }
+    }
+
+    private void renderScaled(RenderSkiaEvent event) {
         List<ClientModule> modules = new ArrayList<>(Starain.getInstance().getModuleManager().getModules());
         Font font = Fonts.getNormal(7.5f);
         modules.sort(Comparator.comparing((m) -> Skia.getTextWidth(((ClientModule) m).getDisplayName(), font)).reversed());
@@ -67,3 +77,4 @@ public final class ArrayListModule extends ClientModule {
         }
     }
 }
+

@@ -29,6 +29,7 @@ public class EffectHUD extends ClientModule {
 
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
     private final BooleanValue lowercase = new BooleanValue("Lowercase", false, this);
+    private final today.starain.value.impl.NumberValue scale = new today.starain.value.impl.NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final BooleanValue icons = new BooleanValue("Icons", true, this);
 
     public EffectHUD() {
@@ -47,6 +48,15 @@ public class EffectHUD extends ClientModule {
 
     @EventTarget
     public void onRender(RenderSkiaEvent event) {
+        today.starain.utils.render.skia.Skia.beginHudScale(mc.getWindow().getGuiScaledWidth() / 2.0f, mc.getWindow().getGuiScaledHeight(), scale.get().floatValue());
+        try {
+            renderScaled(event);
+        } finally {
+            today.starain.utils.render.skia.Skia.endHudScale();
+        }
+    }
+
+    private void renderScaled(RenderSkiaEvent event) {
         if (mc.player == null || mc.level == null) {
             return;
         }
@@ -147,3 +157,4 @@ public class EffectHUD extends ClientModule {
                 : String.format(Locale.ROOT, "%d:%02d", minutes, seconds);
     }
 }
+

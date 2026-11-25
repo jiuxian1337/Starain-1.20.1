@@ -121,6 +121,11 @@ public class Scaffold extends ClientModule {
     private final NumberValue tellyTick = new NumberValue("TellyTicks", 0.0, 6.0, 1.0, 1.0, this, telly::get);
     private final BooleanValue safeWalk = new BooleanValue("SafeWalk", false, this, () -> !telly.get());
     private final NumberValue edgeDist = new NumberValue("Edge Dist", 0, 1, 0.1, 0.01, this, () -> safeWalk.get() && !telly.get());
+    private final ModeValue counter = new ModeValue("Counter", "Material", new String[]{"None", "Material"}, this);
+    private final NumberValue counterX = new NumberValue("Counter X", 0, 1000, 420, 1, this, () -> counter.isMode("Material"));
+    private final NumberValue counterY = new NumberValue("Counter Y", 0, 1000, 300, 1, this, () -> counter.isMode("Material"));
+    private final NumberValue counterScale = new NumberValue("Counter Scale", 0.5, 2.0, 1.0, 0.05, this, () -> counter.isMode("Material"));
+    private float counterSpeed, counterPhase;
     private int airTick;
     private int yLevel;
     private BlockPos blockPos;
@@ -185,7 +190,7 @@ public class Scaffold extends ClientModule {
 
     @EventTarget
     private void onPreTick(PlayerTickEvent event) {
-        int slotId = findBlockSlot();
+        int slotId = isValidStack(mc.player.getOffhandItem()) ? -1 : findBlockSlot();
         if (slotId != -1 && mc.player.getInventory().selected != slotId) {
             mc.player.getInventory().selected = slotId;
         }
@@ -212,7 +217,7 @@ public class Scaffold extends ClientModule {
         if (strength >= 1.5D) {
             ChatUtils.addChatMessage("你也是要飞了: ", String.valueOf(strength));
         }
-        if ((!reachable || strength >= 1.5D) && rotateCount <= 8 && getBlockCount() >= 1 && isValidStack(mc.player.getInventory().getSelected())) {
+        if ((!reachable || strength >= 1.5D) && rotateCount <= 8 && getBlockCount() >= 1 && placeHand() != null) {
 //                ChatUtil.info("working");
             Starain.skipTicks++;
             rotateCount++;
@@ -221,13 +226,14 @@ public class Scaffold extends ClientModule {
             RotationManager.rotations = rotation;
             RotationManager.setActive(true);
             mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(rotation.getYaw(), rotation.getPitch(), mc.player.onGround()));
+            InteractionHand hand = placeHand();
             InteractionResult result = mc.gameMode.useItemOn(
                     mc.player,
-                    InteractionHand.MAIN_HAND,
+                    hand,
                     new BlockHitResult(getVec3(blockPos, enumFacing), enumFacing, blockPos, false)
             );
             if (swing.get() && result.consumesAction()) {
-                mc.getConnection().send(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
+                mc.getConnection().send(new ServerboundSwingPacket(hand));
             }
             onPreTick(event);
             return;
@@ -330,6 +336,13 @@ public class Scaffold extends ClientModule {
         place();
     }
 
+    /** 主手方块优先，其次副手；都不可用时返回 null。 */
+    private InteractionHand placeHand() {
+        if (isValidStack(mc.player.getMainHandItem())) return InteractionHand.MAIN_HAND;
+        if (isValidStack(mc.player.getOffhandItem())) return InteractionHand.OFF_HAND;
+        return null;
+    }
+
     private int findBlockSlot() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
@@ -353,11 +366,14 @@ public class Scaffold extends ClientModule {
                 total += stack.getCount();
             }
         }
+        ItemStack offhand = mc.player.getOffhandItem();
+        if (isValidStack(offhand)) total += offhand.getCount();
         return total;
     }
 
     private void place() {
-        if (!onAir() || blockPos == null || enumFacing == null || !isValidStack(mc.player.getInventory().getSelected())) {
+        InteractionHand hand = placeHand();
+        if (!onAir() || blockPos == null || enumFacing == null || hand == null) {
             return;
         }
 
@@ -367,12 +383,12 @@ public class Scaffold extends ClientModule {
 
         InteractionResult result = mc.gameMode.useItemOn(
                 mc.player,
-                InteractionHand.MAIN_HAND,
+                hand,
                 new BlockHitResult(getVec3(blockPos, enumFacing), enumFacing, blockPos, false)
         );
 
         if (swing.get() && result.consumesAction()) {
-            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.player.swing(hand);
         }
     }
 
@@ -717,8 +733,72 @@ public class Scaffold extends ClientModule {
         BufferUploader.drawWithShader(bufferBuilder.end());
     }
 
+    @EventTarget
+    public void onRenderCounter(today.starain.event.impl.RenderSkiaEvent event) {
+        if (mc.player == null || !counter.isMode("Material")) return;
+        final float w = 140.0f, h = 46.0f, r = 10.0f;
+        float x = counterX.get().floatValue(), y = counterY.get().floatValue();
+        Color accent = Theme.accent(0);
+        Color soft = new Color(200, 200, 205);
+        int blocks = today.starain.utils.player.InventoryUtils.getBlockCountInInventory();
+        int cap = Math.max(64, (int) Math.ceil(blocks / 64.0) * 64);
+        double bps = mc.player.getDeltaMovement().horizontalDistance() * 20.0;
+        // 平滑速度，驱动波浪的振幅与流速
+        counterSpeed += (float) ((Math.min(bps, 12.0) / 12.0 - counterSpeed) * 0.15);
+        counterPhase += 0.05f + counterSpeed * 0.35f;
+
+        today.starain.utils.render.skia.Skia.beginHudScale(x, y, counterScale.get().floatValue());
+        today.starain.utils.render.skia.Skia.drawShadow(x, y, w, h, r);
+        today.starain.utils.render.skia.Skia.drawBlur(x, y, w, h, r);
+        today.starain.utils.render.skia.Skia.drawRoundedRect(x, y, w, h, r, today.starain.ui.Design.BACKGROUND_COLOR);
+
+        io.github.humbleui.skija.Font title = today.starain.utils.render.skia.font.Fonts.getBold(8.0f);
+        io.github.humbleui.skija.Font big = today.starain.utils.render.skia.font.Fonts.getBold(12.0f);
+        io.github.humbleui.skija.Font small = today.starain.utils.render.skia.font.Fonts.getMedium(6.5f);
+        io.github.humbleui.skija.Font icon = today.starain.utils.render.skia.font.Fonts.getIconFill(9.0f);
+        today.starain.utils.render.skia.Skia.drawText(today.starain.utils.render.skia.font.Icon.DEPLOYED_CODE, x + 9.0f, y + 7.5f, accent, icon);
+        today.starain.utils.render.skia.Skia.drawText("Blocks", x + 21.0f, y + 8.0f, today.starain.ui.Design.TEXT_COLOR, title);
+        today.starain.utils.render.skia.Skia.drawText(String.format(java.util.Locale.ROOT, "%.2f BPS", bps), x + 9.0f, y + 19.0f, soft, small);
+
+        String capText = "/ " + cap;
+        float capW = today.starain.utils.render.skia.Skia.getTextWidth(capText, small);
+        String count = String.valueOf(blocks);
+        float cw = today.starain.utils.render.skia.Skia.getTextWidth(count, big);
+        today.starain.utils.render.skia.Skia.drawText(capText, x + w - 9.0f - capW, y + 13.0f, soft, small);
+        today.starain.utils.render.skia.Skia.drawText(count, x + w - 12.0f - capW - cw, y + 9.0f, accent, big);
+
+        float amp = 0.4f + counterSpeed * 3.2f;
+        float freq = 14.0f - counterSpeed * 6.0f;
+        float baseY = y + h - 9.0f;
+        try (io.github.humbleui.skija.Path wave = new io.github.humbleui.skija.Path();
+             io.github.humbleui.skija.Paint glowPaint = new io.github.humbleui.skija.Paint();
+             io.github.humbleui.skija.Paint linePaint = new io.github.humbleui.skija.Paint()) {
+            float len = w - 18.0f;
+            for (float px = 0; px <= len; px += 1.5f) {
+                // 两端收敛，避免波浪顶到圆角
+                float edge = (float) Math.sin(Math.PI * px / len);
+                float py = baseY + (float) Math.sin(px / freq + counterPhase) * amp * edge;
+                if (px == 0) wave.moveTo(x + 9.0f, py); else wave.lineTo(x + 9.0f + px, py);
+            }
+            glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 120).getRGB());
+            glowPaint.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+            glowPaint.setStrokeWidth(3.5f);
+            glowPaint.setAntiAlias(true);
+            glowPaint.setMaskFilter(io.github.humbleui.skija.MaskFilter.makeBlur(io.github.humbleui.skija.FilterBlurMode.NORMAL, 2.5f));
+            linePaint.setColor(accent.getRGB());
+            linePaint.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+            linePaint.setStrokeWidth(1.3f);
+            linePaint.setAntiAlias(true);
+            today.starain.utils.render.skia.Skia.getCanvas().drawPath(wave, glowPaint);
+            today.starain.utils.render.skia.Skia.getCanvas().drawPath(wave, linePaint);
+        }
+        today.starain.utils.render.skia.Skia.endHudScale();
+    }
     @Override
     public String getSuffix() {
         return telly.get() ? "Telly" : snap.get() ? "Snap" : "Normal";
     }
 }
+
+
+

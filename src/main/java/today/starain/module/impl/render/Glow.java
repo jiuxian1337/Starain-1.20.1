@@ -127,7 +127,9 @@ public class Glow extends ClientModule {
         if (alpha <= 0.004F) {
             return;
         }
-        float[] rect = {x, y, width, height, radius, Math.min(alpha, 1.0F)};
+        float s = today.starain.utils.render.skia.Skia.hudScale();
+        float[] rect = {today.starain.utils.render.skia.Skia.hudX(x), today.starain.utils.render.skia.Skia.hudY(y),
+                width * s, height * s, radius * s, Math.min(alpha, 1.0F)};
         if (horizontal) {
             hudRectsHorizontal.add(rect);
         } else {

@@ -41,6 +41,7 @@ public class ScoreboardModule extends ClientModule {
     private final NumberValue x = new NumberValue("X", 0, 5000, 10, 1, this, customRender::get);
     private final NumberValue y = new NumberValue("y", 0, 1000, 150, 1, this, customRender::get);
     private final BooleanValue renderScore = new BooleanValue("Render Score", false, this, customRender::get);
+    private final today.starain.value.impl.NumberValue scale = new today.starain.value.impl.NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final BooleanValue replaceIP = new BooleanValue("Replace Server IP", true, this);
 
     public ScoreboardModule() {
@@ -98,6 +99,15 @@ public class ScoreboardModule extends ClientModule {
 
     @EventTarget
     public void onRender(RenderSkiaEvent event) {
+        today.starain.utils.render.skia.Skia.beginHudScale(x.get().floatValue(), y.get().floatValue(), scale.get().floatValue());
+        try {
+            renderScaled(event);
+        } finally {
+            today.starain.utils.render.skia.Skia.endHudScale();
+        }
+    }
+
+    private void renderScaled(RenderSkiaEvent event) {
         if (objective == null) return;
 
         try {

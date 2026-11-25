@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 
 public class TargetHUD extends ClientModule {
+    private final ModeValue style = new ModeValue("Style", "Default", new String[]{"Default", "Material"}, this);
+    private final ModeValue healthBar = new ModeValue("Health Bar", "Solid", new String[]{"Solid", "Wave", "Segment"}, this, () -> style.isMode("Material"));
+    private final NumberValue scale = new NumberValue("Scale", 0.5, 2.0, 1.0, 0.05, this);
     private final NumberValue x = new NumberValue("X", 0, 1000, 300, 1, this);
     private final NumberValue y = new NumberValue("y", 0, 1000, 300, 1, this);
     private final BooleanValue syncColor = new BooleanValue("Sync Color", false, this);
@@ -186,6 +189,20 @@ public class TargetHUD extends ClientModule {
 
     private void drawHud(AbstractClientPlayer target, float baseX, float baseY, String anchor,
                          float alphaValue, float healValue, float hurtValue) {
+        Skia.beginHudScale(baseX, baseY, scale.get().floatValue());
+        try {
+            if (style.isMode("Material")) {
+                drawMaterial(target, baseX, baseY, anchor, alphaValue, healValue, hurtValue);
+            } else {
+                drawDefault(target, baseX, baseY, anchor, alphaValue, healValue, hurtValue);
+            }
+        } finally {
+            Skia.endHudScale();
+        }
+    }
+
+    private void drawDefault(AbstractClientPlayer target, float baseX, float baseY, String anchor,
+                             float alphaValue, float healValue, float hurtValue) {
         float width = 125.0f;
         float height = 40.0f;
         Font miSans = Fonts.getNormal(10.0f);
@@ -351,6 +368,127 @@ public class TargetHUD extends ClientModule {
         return hitEffects.computeIfAbsent(player.getId(), id -> new HitEffect());
     }
 
+    private void drawMaterial(AbstractClientPlayer target, float baseX, float baseY, String anchor,
+                              float alphaValue, float healValue, float hurtValue) {
+        final float pad = 5.0f, avatar = 26.0f, height = 38.5f, radius = 11.0f;
+        final float contentX = pad + avatar + 7.0f;
+        Font nameFont = Fonts.getBold(9.0f);
+        Font microFont = Fonts.getMedium(5.5f);
+        Font statFont = Fonts.getMedium(6.0f);
+        Font icon = Fonts.getIconFill(7.0f);
+
+        String name = target.getName().getString();
+        String dist = mc.player == null || target == mc.player ? "0.0m"
+                : String.format(java.util.Locale.ROOT, "%.1fm", target.distanceTo(mc.player));
+        // 按最宽数字预留宽度，数值变化时胶囊不伸缩
+        float chipW = Skia.getTextWidth(dist.replaceAll("[0-9]", "0"), microFont) + 10.0f;
+        float nameW = Skia.getTextWidth(name, nameFont);
+        float width = Mth.clamp(contentX + Math.max(nameW + chipW + 8.0f, 100.0f) + pad + 4.0f, 158.5f, 240.0f);
+
+        float offset = sideOffset.get().floatValue();
+        float x, y;
+        switch (anchor) {
+            case "Right" -> { x = baseX + offset; y = baseY - height / 2.0f; }
+            case "Left" -> { x = baseX - offset - width; y = baseY - height / 2.0f; }
+            default -> { x = baseX; y = baseY; }
+        }
+
+        Color accent = Theme.accent(0);
+        float a = alphaValue / 255.0f;
+        if (alphaValue >= 75f) {
+            Skia.drawShadow(x, y, width, height, radius);
+            Skia.drawBlur(x, y, width, height, radius);
+        }
+        Skia.setAlpha((int) alphaValue);
+        Skia.drawRoundedRect(x, y, width, height, radius, Design.BACKGROUND_COLOR);
+
+        Skia.drawPlayerHead(target, x + pad, y + pad, avatar, avatar, 8.0f);
+        if (hurtValue > 1.0f) {
+            Skia.drawRoundedRect(x + pad, y + pad, avatar, avatar, 8.0f, new Color(255, 75, 75, (int) Math.min(160, hurtValue)));
+        }
+
+        float chipX = x + width - pad - chipW;
+        String shown = name;
+        float nameMax = chipX - (x + contentX) - 6.0f;
+        while (shown.length() > 1 && Skia.getTextWidth(shown, nameFont) > nameMax) shown = shown.substring(0, shown.length() - 1);
+        Skia.drawText(shown, x + contentX, y + 6.0f, accent, nameFont);
+        Skia.drawRoundedRect(chipX, y + 4.0f, chipW, 11.0f, 5.5f,
+                new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 45));
+        // 固定基线 + 居中，避免数字变化时按字形边界重新定位导致抖动
+        try (Paint distPaint = new Paint()) {
+            distPaint.setColor(Design.TEXT_COLOR.getRGB());
+            distPaint.setAntiAlias(true);
+            float textW = Skia.getTextWidth(dist, microFont);
+            float baseline = y + 4.0f + 5.5f + microFont.getMetrics().getCapHeight() / 2.0f;
+            Skia.getCanvas().drawString(dist, chipX + (chipW - textW) / 2.0f, baseline, microFont, distPaint);
+        }
+
+        float barX = x + contentX, barY = y + 18.5f, barW = Math.min(width - contentX - pad - 4.0f, 90.0f);
+        float max = Math.max(1.0f, target.getMaxHealth());
+        float ratio = Mth.clamp(healValue / max, 0.0f, 1.0f);
+        drawHealthBar(barX, barY, barW, ratio, accent);
+
+        String hp = String.format(java.util.Locale.ROOT, "%.1f / %d", target.getHealth(), Math.round(max));
+        Skia.drawText(hp, barX, y + 27.0f, new Color(200, 200, 205), statFont);
+        String armor = String.valueOf(target.getArmorValue());
+        float armorW = Skia.getTextWidth(armor, statFont);
+        float iconW = Skia.getTextWidth(today.starain.utils.render.skia.font.Icon.SHIELD, icon);
+        float ax = x + width - pad - 4.0f - armorW;
+        Skia.drawText(armor, ax, y + 27.0f, new Color(200, 200, 205), statFont);
+        Skia.drawText(today.starain.utils.render.skia.font.Icon.SHIELD, ax - iconW - 2.0f, y + 26.5f, accent, icon);
+        Skia.restore();
+
+        if (hitParticles.get()) {
+            renderParticles(target, x + pad + avatar / 2.0f, y + pad + avatar / 2.0f, a);
+        }
+    }
+
+    private void drawHealthBar(float barX, float barY, float barW, float ratio, Color accent) {
+        Color track = new Color(255, 255, 255, 25);
+        switch (healthBar.get()) {
+            case "Wave" -> {
+                Skia.drawRoundedRect(barX, barY, barW, 4.0f, 2.0f, track);
+                float fill = barW * ratio;
+                if (fill < 1.0f) return;
+                float phase = (System.currentTimeMillis() % 100000L) / 180.0f;
+                try (Path wave = new Path(); Paint line = new Paint(); Paint glowPaint = new Paint()) {
+                    for (float px = 0; px <= fill; px += 1.0f) {
+                        float py = barY + 2.0f + (float) Math.sin(px / 5.0f - phase) * 1.4f;
+                        if (px == 0) wave.moveTo(barX, py); else wave.lineTo(barX + px, py);
+                    }
+                    glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 110).getRGB());
+                    glowPaint.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+                    glowPaint.setStrokeWidth(3.0f);
+                    glowPaint.setAntiAlias(true);
+                    glowPaint.setMaskFilter(io.github.humbleui.skija.MaskFilter.makeBlur(io.github.humbleui.skija.FilterBlurMode.NORMAL, 1.5f));
+                    line.setColor(accent.getRGB());
+                    line.setMode(io.github.humbleui.skija.PaintMode.STROKE);
+                    line.setStrokeWidth(1.4f);
+                    line.setStrokeCap(io.github.humbleui.skija.PaintStrokeCap.ROUND);
+                    line.setAntiAlias(true);
+                    Skia.getCanvas().drawPath(wave, glowPaint);
+                    Skia.getCanvas().drawPath(wave, line);
+                }
+            }
+            case "Segment" -> {
+                final float seg = 2.2f, gap = 1.0f, h = 5.0f;
+                int count = Math.max(1, (int) ((barW + gap) / (seg + gap)));
+                int filled = Math.round(count * ratio);
+                for (int i = 0; i < count; i++) {
+                    float sx = barX + i * (seg + gap);
+                    Color c = i < filled ? Theme.accent(i * 2) : track;
+                    Skia.drawRoundedRect(sx, barY - 0.5f, seg, h, 0.6f, c);
+                }
+            }
+            default -> {
+                Skia.drawRoundedRect(barX, barY, barW, 4.0f, 2.0f, track);
+                if (ratio > 0.01f) {
+                    Skia.drawRoundedRect(barX, barY, Math.max(4.0f, barW * ratio), 4.0f, 2.0f, accent);
+                }
+            }
+        }
+    }
+
     private void renderParticles(AbstractClientPlayer player, float centerX, float centerY, float alphaScale) {
         HitEffect effect = effectFor(player);
         if (effect.particles.isEmpty() && player.hurtTime <= effect.lastHurtTime) {
@@ -434,3 +572,7 @@ public class TargetHUD extends ClientModule {
         }
     }
 }
+
+
+
+

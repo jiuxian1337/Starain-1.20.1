@@ -120,15 +120,46 @@ public class Skia implements Wrapper {
         getCanvas().drawRRect(RRect.makeComplexXYWH(x, y, width, height, corners), getPaint(color));
     }
 
+    private static float hudScale = 1.0f, hudOriginX, hudOriginY;
+
+    /**
+     * 以 (originX, originY) 为锚点缩放整个 HUD 组件；队列式的模糊/阴影/发光区域也会同步映射。
+     * 必须与 {@link #endHudScale()} 成对调用。
+     */
+    public static void beginHudScale(float originX, float originY, float scale) {
+        hudScale = scale;
+        hudOriginX = originX;
+        hudOriginY = originY;
+        save();
+        scale(originX, originY, scale);
+    }
+
+    public static void endHudScale() {
+        restore();
+        hudScale = 1.0f;
+    }
+
+    public static float hudX(float x) {
+        return hudOriginX + (x - hudOriginX) * hudScale;
+    }
+
+    public static float hudY(float y) {
+        return hudOriginY + (y - hudOriginY) * hudScale;
+    }
+
+    public static float hudScale() {
+        return hudScale;
+    }
+
     public static void drawBlur(float x, float y, float width, float height, float radius) {
         if (HUD.isBlurEnabled()) {
-            blurPath.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+            blurPath.addRRect(RRect.makeXYWH(hudX(x), hudY(y), width * hudScale, height * hudScale, radius * hudScale));
         }
     }
 
     public static void drawShadow(float x, float y, float width, float height, float radius) {
         if (HUD.isShadowEnabled()) {
-            shadowPath.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+            shadowPath.addRRect(RRect.makeXYWH(hudX(x), hudY(y), width * hudScale, height * hudScale, radius * hudScale));
         }
     }
 

@@ -31,6 +31,7 @@ public class NameTags extends ClientModule {
     private static final Color HEALTH_TEXT_COLOR = new Color(200, 200, 200);
     private static final Color HEART_ICON_COLOR = new Color(255, 85, 85);
     private static final String HEART_ICON = String.valueOf((char) 0xE87D);
+    private static final java.util.regex.Pattern FORMAT_CODE = java.util.regex.Pattern.compile("§.");
     private final Map<Entity, Vector2f> entityPositions = new ConcurrentHashMap<>();
     private final List<String> statusParts = new ArrayList<>();
 
@@ -129,7 +130,7 @@ public class NameTags extends ClientModule {
 
         float contentX = x + padding;
 
-        Rect textBounds = font.measureText(text.replaceAll("§.", ""));
+        Rect textBounds = font.measureText(FORMAT_CODE.matcher(text).replaceAll(""));
         float textY = y + (height - textBounds.getHeight()) / 2.0f;
 
         Skia.drawTextPlain(text, contentX, textY, textColor, font);
