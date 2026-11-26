@@ -110,17 +110,27 @@ gradle build -PstarainPlatform=all       # 桌面四个 + 安卓两个原生库�
 > 1. Skija 的 `OperatingSystem` 枚举只有 `WINDOWS` / `LINUX` / `MACOS`，**没有 ANDROID**——
 >    在安卓 JVM（`os.name=Linux`、`os.arch=aarch64`）上它只会去资源目录
 >    `io/github/humbleui/skija/linux/arm64/` 找 `libskija.so`，永远找不到我们的 android 库。
-> 2. 因此由模组自己处理：`today.starain.utils.render.skia.SkijaNatives#prepare()` 在 `Bootstrap#launch()`
->    最前面执行，检测到 Android 后从 jar 内的 `io/github/humbleui/skija/android/<arch>/libskija.so`
->    释放到 `-Dstarain.native.dir` / `java.io.tmpdir` / `user.dir` 之一（目录名 `starain-skija-<arch>`），
->    尽量补上可执行位，然后 `System.setProperty("skija.library.path", ...)`，让 Skija 走 `_loadFromDir`。
+> 2. 因此由模组自己处理：`today.starain.utils.render.skia.SkijaNatives#prepare()` 检测到 Android 后，
+>    从 jar 内的 `io/github/humbleui/skija/android/<arch>/libskija.so` 释放到
+>    `-Dstarain.native.dir` / `java.io.tmpdir` / `user.home` / `user.dir` 之一（目录名 `starain-skija-<arch>`，
+>    已存在且大小一致就直接复用），尽量补上可执行位，然后 `System.setProperty("skija.library.path", ...)`，
+>    让 Skija 走 `_loadFromDir`（= `System.load(dir + "/" + System.mapLibraryName("skija"))`）。
+>    外置存储（`/storage`、`/sdcard`、`/mnt/media_rw`）一般是 noexec 挂载，只作为最后兜底。
 >    桌面端检测失败直接返回，行为不变。
-> 3. 架构只支持 `arm64` 与 `x64`（Skija 只发布了这两个），32 位 ARM 设备无法使用。
-> 4. 尚未在真机上验证；Android 上 Skia 的 GPU 上下文（EGL/GLES）也没有实测。
+> 3. **调用时机是最容易踩的坑**：`Library` 在 `DirectContext` 的静态初始化块里就被加载，而
+>    `MixinMinecraft` 在 `Minecraft.<init>` 的 `resizeDisplay` 阶段就会调 `SkiaContext.createSurface`，
+>    那时 `Bootstrap`（注入在 `<init>` 的 TAIL）还没执行。所以真正生效的是 `fabric.mod.json` 里的
+>    `preLaunch` 入口点 `today.starain.StarainPreLaunch`；`SkiaContext` / `Skia` 的静态块与 `Bootstrap` 只是兜底（幂等）。
+>    少了 preLaunch 就会在启动时抛
+>    `UnsatisfiedLinkError: Library file libskija.so not found in io/github/humbleui/skija/linux/arm64/`。
+> 4. 架构只支持 `arm64` 与 `x64`（Skija 只发布了这两个），32 位 ARM 设备无法使用。
+> 5. 释放与加载过程都会打印 `[Starain] ...` 日志，真机排查时先看这个前缀。
+> 6. Android 上 Skia 的 GPU 上下文（EGL/GLES）还没有实测结论。
 
 ## CI（GitHub Actions）
 
-`.github/workflows/build.yml` 在 push 到 `mh-dev`、PR 到 `mh-dev`、打 `v*` tag、手动触发时运行，
+`.github/workflows/build.yml` 在 push 到 `mh-dev` / `mh-dev-android`、PR 到这两个分支、打 `v*` tag、
+手动触发时运行，
 用 matrix 并行产出 5 个 artifact：`starain-windows`、`starain-macos`、`starain-linux`、
 `starain-android`、`starain-all`。
 

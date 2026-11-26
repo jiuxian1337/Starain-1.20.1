@@ -28,6 +28,12 @@ import java.util.Optional;
 
 public class Skia implements Wrapper {
 
+    static {
+        // 安卓没有 OperatingSystem.ANDROID：下面 new PathBuilder() 会触发 Skija 原生库加载，
+        // 必须在此之前把 skija.library.path 设好（幂等，桌面端直接返回）。
+        SkijaNatives.prepare();
+    }
+
     private static final ImageHelper imageHelper = new ImageHelper();
     private static final int[] COLOR_CODES = new int[]{
             0xFF000000, 0xFF0000AA, 0xFF00AA00, 0xFF00AAAA, 0xFFAA0000, 0xFFAA00AA, 0xFFAA5500, 0xFFAAAAAA,

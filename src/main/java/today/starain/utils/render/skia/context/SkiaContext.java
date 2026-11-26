@@ -9,10 +9,17 @@ import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL33;
+import today.starain.utils.render.skia.SkijaNatives;
 
 import java.util.function.Consumer;
 
 public class SkiaContext {
+
+    static {
+        // resizeDisplay 在 Minecraft.<init> 里就会调用 createSurface，比 Bootstrap 早得多；
+        // 安卓缺少 OperatingSystem.ANDROID，必须先把原生库释放出来并写好 skija.library.path。
+        SkijaNatives.prepare();
+    }
 
     @Getter
     private static DirectContext context = null;
