@@ -6,34 +6,8 @@ plugins {
 version = new Date().format('yyMMdd')
 group = project.maven_group
 
-// ============================================================
-// 平台化构建
-//   gradle build                          → 默认 all（桌面全平台原生库）
-//   gradle build -PstarainPlatform=windows|macos|linux|android|all
-//
-// 每个平台只打包自己需要的 Skia 原生库，产物名带平台后缀：
-//   build/libs/starain-<版本>-<平台>[-sources].jar
-// ============================================================
-def starainPlatform = (findProperty('starainPlatform') ?: 'all').toString().toLowerCase()
-def skijaVersion = (findProperty('skijaVersion') ?: '0.116.4').toString()
-// Skija 从 0.143.7 起才发布 Android 原生库，0.116.4 没有；CI 里从 Maven 中央仓库拉取。
-def skijaAndroidVersion = (findProperty('skijaAndroidVersion') ?: '0.143.18').toString()
-
-def skijaNatives = [
-        windows: ['skija-windows-x64'],
-        macos  : ['skija-macos-x64', 'skija-macos-arm64'],
-        linux  : ['skija-linux-x64'],
-        // Android 单独处理：版本与桌面端不同，见下方 dependencies
-        android: [],
-        all    : ['skija-windows-x64', 'skija-linux-x64', 'skija-macos-x64', 'skija-macos-arm64'],
-]
-
-if (!skijaNatives.containsKey(starainPlatform)) {
-    throw new GradleException("未知平台：${starainPlatform}，可选值：${skijaNatives.keySet().join(' / ')}")
-}
-
 base {
-    archivesName = "${project.archives_base_name}-${starainPlatform}"
+    archivesName = project.archives_base_name
 }
 
 loom {
@@ -75,28 +49,18 @@ dependencies {
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
 
     implementation include('io.github.humbleui:types:0.2.0')
-    implementation include("io.github.humbleui:skija-shared:${skijaVersion}")
+    implementation include('io.github.humbleui:skija-shared:0.116.4')
+    implementation include('io.github.humbleui:skija-windows-x64:0.116.4')
+    implementation include('io.github.humbleui:skija-linux-x64:0.116.4')
+    implementation include('io.github.humbleui:skija-macos-x64:0.116.4')
+    implementation include('io.github.humbleui:skija-macos-arm64:0.116.4')
 
-    // 按平台只打包对应原生库
-    skijaNatives[starainPlatform].each { nativeArtifact ->
-        implementation include("io.github.humbleui:${nativeArtifact}:${skijaVersion}")
-    }
-
-    // Android：桌面版 0.116.4 没有 android 原生库，改从 Maven 拉 0.143.x 的 arm64/x64 库。
-    // 注意：shared 仍是 ${skijaVersion}，与 android 原生库不同版本，运行时存在 JNI 不匹配风险。
-    // 只用 include 打包，不放进 implementation：这些 jar 里也有 0.143.x 的 Skia 类，
-    // 一旦进编译类路径就会盖掉 0.116.4 的 API，导致正常代码编译失败。
-    if (starainPlatform == 'android') {
-        include("io.github.humbleui:skija-android-arm64:${skijaAndroidVersion}")
-        include("io.github.humbleui:skija-android-x64:${skijaAndroidVersion}")
-    }
 }
 
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
-    inputs.property "starain_platform", starainPlatform
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
@@ -131,7 +95,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archives_base_name}" }
+        rename { "${it}_${project.archivesBaseName}" }
     }
 }
 
@@ -144,7 +108,7 @@ publishing {
         }
     }
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for how to set up publishing.
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
         // Add repositories to publish to here.
         // Notice: This block does NOT have the same function as the block in the top level.
@@ -165,18 +129,6 @@ tasks.register('updateVersionInJava') {
         def newContent = content.replaceAll(/public static final String VERSION = "[^"]*";/, "public static final String VERSION = \"${project.version}\";")
         if (content != newContent) {
             starainFile.text = newContent
-        }
-    }
-}
-
-// 打出来的 jar 里实际带了哪些平台的 Skia 原生库，构建时打印一眼可见。
-tasks.register('printPlatformInfo') {
-    doLast {
-        println "[Starain] 平台 = ${starainPlatform}"
-        println "[Starain] Skija 版本 = ${skijaVersion}"
-        println "[Starain] 原生库 = ${skijaNatives[starainPlatform]}"
-        if (starainPlatform == 'android') {
-            println "[Starain] Android 原生库版本 = ${skijaAndroidVersion}"
         }
     }
 }
