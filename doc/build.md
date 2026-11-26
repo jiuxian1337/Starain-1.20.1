@@ -57,7 +57,7 @@ Minecraft Client:
 - **Fabric API 未使用**：没有 `fabric-api` 依赖，只依赖 loader。
 - **Lombok**：1.18.46。改 `build.gradle` 时注意版本一致。
 - **Skia**：`io.github.humbleui:skija-shared` + 按平台选择的原生库，全部通过 `include(...)` 打进 jar。
-  全项目统一 **0.143.18**（这是第一个同时提供桌面与 Android 原生库的版本）。
+  桌面端共用 0.116.4；Android 原生库只有 0.143.7 以后的版本，单独用 `-PskijaAndroidVersion` 指定（见下一节）。
 - **DevAuth**：`modRuntimeOnly`，仅开发环境登录正版账号，不会进入发布 jar。想关掉自动登录就注释 `build.gradle` 里 `runs.client` 的 `devauth.enabled`。
 
 ## 资源打包
@@ -88,8 +88,8 @@ Skia 的原生库是分平台发布的，一份 jar 同时塞进所有平台会�
 gradle build -PstarainPlatform=windows   # 只带 skija-windows-x64
 gradle build -PstarainPlatform=macos     # 带 skija-macos-x64 + skija-macos-arm64
 gradle build -PstarainPlatform=linux     # 只带 skija-linux-x64
-gradle build -PstarainPlatform=android   # 只带 skija-android-arm64 + x64
-gradle build -PstarainPlatform=all       # 桌面四个 + 安卓两个原生库全带（默认）
+gradle build -PstarainPlatform=android   # 只带 skija-android-arm64 + x64（从 Maven 拉 0.143.x）
+gradle build -PstarainPlatform=all       # 桌面四个原生库全带（默认）
 ```
 
 产物：`build/libs/starain-<平台>-<yyMMdd>.jar` 与对应的 `-sources.jar`（Gradle 的命名是
@@ -100,23 +100,21 @@ gradle build -PstarainPlatform=all       # 桌面四个 + 安卓两个原生库�
 | 属性 | 默认值 | 说明 |
 | --- | --- | --- |
 | `-PstarainPlatform` | `all` | `windows` / `macos` / `linux` / `android` / `all`，非法值直接构建失败 |
-| `-PskijaVersion` | `0.143.18` | skija-shared 与桌面原生库版本 |
-| `-PskijaAndroidVersion` | 跟随 `-PskijaVersion` | Android 原生库版本，一般不用单独指定 |
+| `-PskijaVersion` | `0.116.4` | 桌面端 skija-shared 与原生库版本 |
+| `-PskijaAndroidVersion` | `0.143.18` | Android 原生库版本（0.116.4 没有 android 库） |
 
 `gradle printPlatformInfo -PstarainPlatform=<平台>` 会打印本次实际打包的内容。
 
-> **Android 产物说明（务必先读）**
+> **Android 产物的限制（务必先读）**
 >
-> 1. Skija 的 `OperatingSystem` 枚举只有 `WINDOWS` / `LINUX` / `MACOS`，**没有 ANDROID**——
->    在安卓 JVM（`os.name=Linux`、`os.arch=aarch64`）上它只会去资源目录
->    `io/github/humbleui/skija/linux/arm64/` 找 `libskija.so`，永远找不到我们的 android 库。
-> 2. 因此由模组自己处理：`today.starain.utils.render.skia.SkijaNatives#prepare()` 在 `Bootstrap#launch()`
->    最前面执行，检测到 Android 后从 jar 内的 `io/github/humbleui/skija/android/<arch>/libskija.so`
->    释放到 `-Dstarain.native.dir` / `java.io.tmpdir` / `user.dir` 之一（目录名 `starain-skija-<arch>`），
->    尽量补上可执行位，然后 `System.setProperty("skija.library.path", ...)`，让 Skija 走 `_loadFromDir`。
->    桌面端检测失败直接返回，行为不变。
-> 3. 架构只支持 `arm64` 与 `x64`（Skija 只发布了这两个），32 位 ARM 设备无法使用。
-> 4. 尚未在真机上验证；Android 上 Skia 的 GPU 上下文（EGL/GLES）也没有实测。
+> 1. `skija-android-*` 最早只发布到 0.143.7，本项目 `skija-shared` 是 0.116.4，**两者版本不一致**。
+> 2. Skija 的 `OperatingSystem` 枚举（0.116.4 与 0.143.18 都确认过）只有 `WINDOWS` / `LINUX` / `MACOS`，
+>    **没有 ANDROID**——原生库不会自动按平台加载。Android 上必须自己解压 `libskija.so` 并设置
+>    `-Dskija.library.path=<目录>`。
+> 3. 因此 android 产物的定位是"原生库载荷"：CI 把 `skija-android-arm64/x64` 打进 jar，方便启动器
+>    取出 libskija.so；README 里的常规玩法（自动加载）在 Android 上并不成立，且 shared 0.116.4 +
+>    native 0.143.18 混用有 JNI 符号不匹配风险，尚未真机验证。
+> 4. 要做到真正自洽，需要把整个项目升级到同一个 0.143.x（代码里有约 27 处 API 差异，属独立改造）。
 
 ## CI（GitHub Actions）
 

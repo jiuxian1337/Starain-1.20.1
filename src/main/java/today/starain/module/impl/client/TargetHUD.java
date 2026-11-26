@@ -4,7 +4,6 @@ import io.github.humbleui.skija.ClipMode;
 import io.github.humbleui.skija.Font;
 import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.Path;
-import io.github.humbleui.skija.PathBuilder;
 import io.github.humbleui.types.RRect;
 import io.github.humbleui.types.Rect;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -302,7 +301,8 @@ public class TargetHUD extends ClientModule {
             if (hurtValue > 1.0f) {
                 Skia.drawRoundedRect(x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f, new Color(255, 80, 80, (int) hurtValue));
             }
-            Path path = Path.makeRRect(RRect.makeXYWH(x + 40.0f, y + 30.5f, healBarWidth, 5.0f, 3.0f));
+            Path path = new Path();
+            path.addRRect(RRect.makeXYWH(x + 40.0f, y + 30.5f, healBarWidth, 5.0f, 3.0f));
             Skia.save();
             Skia.getCanvas().clipPath(path, ClipMode.INTERSECT, true);
             Skia.drawRect(x + 40.0f, y + 30.5f, healBarWidth, 5.0f, new Color(0, 0, 0, 50));
@@ -509,26 +509,23 @@ public class TargetHUD extends ClientModule {
                 float fill = barW * ratio;
                 if (fill < 1.0f) return;
                 float phase = (System.currentTimeMillis() % 100000L) / 180.0f;
-                // 0.143 起 Path 由 PathBuilder 生成；build 出来的是独立对象，用完立刻关闭。
-                try (PathBuilder waveBuilder = new PathBuilder(); Paint line = new Paint(); Paint glowPaint = new Paint()) {
+                try (Path wave = new Path(); Paint line = new Paint(); Paint glowPaint = new Paint()) {
                     for (float px = 0; px <= fill; px += 1.0f) {
                         float py = barY + 2.0f + (float) Math.sin(px / 5.0f - phase) * 1.4f;
-                        if (px == 0) waveBuilder.moveTo(barX, py); else waveBuilder.lineTo(barX + px, py);
+                        if (px == 0) wave.moveTo(barX, py); else wave.lineTo(barX + px, py);
                     }
-                    try (Path wave = waveBuilder.build()) {
-                        glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 110).getRGB());
-                        glowPaint.setMode(PaintMode.STROKE);
-                        glowPaint.setStrokeWidth(3.0f);
-                        glowPaint.setAntiAlias(true);
-                        glowPaint.setMaskFilter(MaskFilter.makeBlur(FilterBlurMode.NORMAL, 1.5f));
-                        line.setColor(accent.getRGB());
-                        line.setMode(PaintMode.STROKE);
-                        line.setStrokeWidth(1.4f);
-                        line.setStrokeCap(PaintStrokeCap.ROUND);
-                        line.setAntiAlias(true);
-                        Skia.getCanvas().drawPath(wave, glowPaint);
-                        Skia.getCanvas().drawPath(wave, line);
-                    }
+                    glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 110).getRGB());
+                    glowPaint.setMode(PaintMode.STROKE);
+                    glowPaint.setStrokeWidth(3.0f);
+                    glowPaint.setAntiAlias(true);
+                    glowPaint.setMaskFilter(MaskFilter.makeBlur(FilterBlurMode.NORMAL, 1.5f));
+                    line.setColor(accent.getRGB());
+                    line.setMode(PaintMode.STROKE);
+                    line.setStrokeWidth(1.4f);
+                    line.setStrokeCap(PaintStrokeCap.ROUND);
+                    line.setAntiAlias(true);
+                    Skia.getCanvas().drawPath(wave, glowPaint);
+                    Skia.getCanvas().drawPath(wave, line);
                 }
             }
             case "Segment" -> {

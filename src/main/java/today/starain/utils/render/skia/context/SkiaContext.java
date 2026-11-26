@@ -42,7 +42,7 @@ public class SkiaContext {
         renderTarget = BackendRenderTarget.makeGL(width, height, 0, 8,
                 Minecraft.getInstance().getMainRenderTarget().frameBufferId, GL11.GL_RGBA8);
         surface = Surface.wrapBackendRenderTarget(context, renderTarget, SurfaceOrigin.BOTTOM_LEFT,
-                ColorType.RGBA_8888, ColorSpace.getSRGB());
+                SurfaceColorFormat.RGBA_8888, ColorSpace.getSRGB());
     }
 
     public static void draw(Consumer<Canvas> drawingLogic) {

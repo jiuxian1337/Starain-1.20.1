@@ -64,13 +64,11 @@ public class MixinGui {
                 if (HUD.isBlurEnabled()) {
                     Window window = Minecraft.getInstance().getWindow();
                     Skia.save();
-                    Path blurPath = Skia.buildBlurPath();
-                    Skia.getCanvas().clipPath(blurPath, ClipMode.INTERSECT, true);
+                    Skia.getCanvas().clipPath(Skia.blurPath, ClipMode.INTERSECT, true);
                     Skia.drawImage(KawaseBlur.INSTANCE.getTexture(), 0, 0, window.getWidth() / (float) window.getGuiScale(), window.getHeight() / (float) window.getGuiScale(), 1F,
                             SurfaceOrigin.BOTTOM_LEFT);
                     Skia.restore();
-                    blurPath.close();
-                    Skia.resetBlurPath();
+                    Skia.blurPath = new Path();
                 }
 
                 // 渲染阴影
@@ -80,12 +78,10 @@ public class MixinGui {
                     paint.setARGB(HUD.getShadowColor().getAlpha(), HUD.getShadowColor().getRed(), HUD.getShadowColor().getGreen(), HUD.getShadowColor().getBlue());
                     paint.setImageFilter(ImageFilter.makeBlur(2.5F, 2.5F, FilterTileMode.DECAL));
                     Skia.save();
-                    Path shadowPath = Skia.buildShadowPath();
-                    Skia.getCanvas().clipPath(shadowPath, ClipMode.DIFFERENCE, true);
-                    Skia.getCanvas().drawPath(shadowPath, paint);
+                    Skia.getCanvas().clipPath(Skia.shadowPath, ClipMode.DIFFERENCE, true);
+                    Skia.getCanvas().drawPath(Skia.shadowPath, paint);
                     Skia.restore();
-                    shadowPath.close();
-                    Skia.resetShadowPath();
+                    Skia.shadowPath = new Path();
                 }
 
                 ChatHudRenderer.renderPanel();

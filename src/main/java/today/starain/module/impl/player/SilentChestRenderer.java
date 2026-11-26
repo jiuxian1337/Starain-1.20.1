@@ -3,7 +3,6 @@ package today.starain.module.impl.player;
 import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.PaintStrokeJoin;
 import io.github.humbleui.skija.Path;
-import io.github.humbleui.skija.PathBuilder;
 import io.github.humbleui.skija.Shader;
 import io.github.humbleui.types.Point;
 import net.minecraft.client.Minecraft;
@@ -184,7 +183,7 @@ final class SilentChestRenderer {
         float a = w / 2.0f, b = h / 2.0f;
         int samples = 160;
         double e = 2.0 / 10.0;
-        PathBuilder pathBuilder = new PathBuilder();
+        Path path = new Path();
         for (int i = 0; i <= samples; i++) {
             double t = Math.PI * 2 * i / samples;
             double ct = Math.cos(t), st = Math.sin(t);
@@ -194,12 +193,10 @@ final class SilentChestRenderer {
             double len = Math.max(1e-3, Math.hypot(px, py));
             float vx = (float) (cx + px + px / len * wob);
             float vy = (float) (cy + py + py / len * wob);
-            if (i == 0) pathBuilder.moveTo(vx, vy);
-            else pathBuilder.lineTo(vx, vy);
+            if (i == 0) path.moveTo(vx, vy);
+            else path.lineTo(vx, vy);
         }
-        pathBuilder.closePath();
-        Path path = pathBuilder.build();
-        pathBuilder.close();
+        path.closePath();
 
         int stops = 6;
         int[] colors = new int[stops + 1];
@@ -220,8 +217,6 @@ final class SilentChestRenderer {
                 Matrix33.makeRotate((time * 90.0f) % 360.0f, cx, cy));
         paint.setShader(Shader.makeSweepGradient(cx, cy, colors, positions, style));
         Skia.getCanvas().drawPath(path, paint);
-        path.close();
-        paint.close();
     }
 
     private static float easeOutBack(float t) {

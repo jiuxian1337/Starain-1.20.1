@@ -3,7 +3,6 @@ package today.starain.utils.render.skia.font;
 import io.github.humbleui.skija.Data;
 import io.github.humbleui.skija.Font;
 import io.github.humbleui.skija.FontEdging;
-import io.github.humbleui.skija.FontMgr;
 import io.github.humbleui.skija.Typeface;
 import today.starain.utils.render.skia.utils.SkiaUtils;
 
@@ -22,8 +21,7 @@ public class FontHelper {
 
     private static Typeface loadTypeface(String font, FontType type) {
         Optional<Data> fontDataOptional = SkiaUtils.convertToData("/assets/starain/fonts/" + font);
-        // Skija 0.143 起 Typeface 的静态工厂移到 FontMgr 上。
-        return fontDataOptional.map(data -> FontMgr.getDefault().makeFromData(data))
+        return fontDataOptional.map(Typeface::makeFromData)
                 .orElseThrow(() -> new IllegalArgumentException("Font not found: " + font));
     }
 
