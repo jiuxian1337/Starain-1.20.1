@@ -12,10 +12,10 @@ name: Build
 
 on:
   push:
-    branches: [ mh-dev ]
+    branches: [ mh-dev, mh-dev-android ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ mh-dev ]
+    branches: [ mh-dev, mh-dev-android ]
   workflow_dispatch:
 
 permissions:
