@@ -205,6 +205,34 @@ public final class SkijaNatives {
      * 再从里面读出 {@code io/github/humbleui/skija/android/<arch>/libskija.so}。
      * 这样不依赖类加载器对嵌套 jar 资源的支持。
      */
+    /**
+     * 把 code source 的 URL 还原成磁盘上的 jar 文件。
+     * Fabric 对嵌套 jar 给出的可能是 {@code jar:file:/.../starain.jar!/META-INF/jars/x.jar!/}，
+     * 这种情况下真正能打开的是最外层那个 jar。
+     */
+    private static java.io.File toFile(java.net.URL location) {
+        if (location == null) {
+            return null;
+        }
+        try {
+            String text = location.toString();
+            if (text.startsWith("jar:")) {
+                text = text.substring(4);
+            }
+            int bang = text.indexOf("!/");
+            if (bang >= 0) {
+                text = text.substring(0, bang);
+            }
+            if (!text.startsWith("file:")) {
+                return null;
+            }
+            return new java.io.File(new java.net.URI(text));
+        } catch (Throwable t) {
+            log("解析模组 jar 路径失败（" + location + "）：" + t);
+            return null;
+        }
+    }
+
     private static byte[] readFromNestedJar(String arch) {
         java.io.File outer = null;
         try {
@@ -213,13 +241,9 @@ public final class SkijaNatives {
                 log("拿不到模组 jar 的位置，无法从嵌套 jar 读原生库");
                 return null;
             }
-            java.net.URL location = source.getLocation();
-            if (!"file".equals(location.getProtocol())) {
-                log("模组 jar 不是本地文件（" + location + "），无法从嵌套 jar 读原生库");
-                return null;
-            }
-            outer = new java.io.File(location.toURI());
-            if (!outer.isFile()) {
+            outer = toFile(source.getLocation());
+            if (outer == null || !outer.isFile()) {
+                log("模组 jar 不是本地文件（" + source.getLocation() + "），无法从嵌套 jar 读原生库");
                 return null;
             }
             String wanted = "io/github/humbleui/skija/android/" + arch + "/libskija.so";
