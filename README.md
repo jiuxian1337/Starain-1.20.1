@@ -39,14 +39,16 @@ Starain 是一个面向 Minecraft **1.20.1 Fabric** 的客户端功能整合模�
 | Fabric API | 不需要 |
 | 操作系统 | Windows 10/11 x64 |
 
-Skia 的原生库已随 jar 打包（Windows / Linux / macOS x64 / macOS ARM64），不需要额外安装。
+Skia 的原生库按平台分别打包（Windows x64 / Linux x64 / macOS x64 / macOS ARM64 / Android arm64+x64），
+下载对应平台的 jar 即可，不需要额外安装。Android 需用 `-android` 或 `-all` 产物，原生库会在启动时自动释放。
 
 ---
 
 ## 安装
 
 1. 安装对应 Minecraft 1.20.1 的 Fabric Loader。
-2. 把 `starain-<版本>.jar` 放进 `.minecraft/mods/`。
+2. 把对应平台的 `starain-<平台>-<版本>.jar`（如 `starain-windows-260717.jar`）放进 `.minecraft/mods/`。
+   桌面端想一个 jar 通用就下 `-all`。
 3. 启动游戏。
 
 模组是**纯客户端**的（`"environment": "client"`），不要装到服务端。

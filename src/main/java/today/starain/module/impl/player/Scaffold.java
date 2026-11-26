@@ -55,6 +55,7 @@ import io.github.humbleui.skija.MaskFilter;
 import io.github.humbleui.skija.Paint;
 import io.github.humbleui.skija.PaintMode;
 import io.github.humbleui.skija.Path;
+import io.github.humbleui.skija.PathBuilder;
 import today.starain.event.impl.RenderSkiaEvent;
 import today.starain.ui.Design;
 import today.starain.ui.HudDrag;
@@ -802,7 +803,8 @@ public class Scaffold extends ClientModule {
         float amp = 0.4f + counterSpeed * 3.2f;
         float freq = 14.0f - counterSpeed * 6.0f;
         float baseY = y + h - 9.0f;
-        try (Path wave = new Path();
+        // 0.143 起 Path 由 PathBuilder 生成，build 出来的是独立对象，用完立刻关闭。
+        try (PathBuilder waveBuilder = new PathBuilder();
              Paint glowPaint = new Paint();
              Paint linePaint = new Paint()) {
             float len = w - 18.0f;
@@ -810,19 +812,21 @@ public class Scaffold extends ClientModule {
                 // 两端收敛，避免波浪顶到圆角
                 float edge = (float) Math.sin(Math.PI * px / len);
                 float py = baseY + (float) Math.sin(px / freq + counterPhase) * amp * edge;
-                if (px == 0) wave.moveTo(x + 9.0f, py); else wave.lineTo(x + 9.0f + px, py);
+                if (px == 0) waveBuilder.moveTo(x + 9.0f, py); else waveBuilder.lineTo(x + 9.0f + px, py);
             }
-            glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 120).getRGB());
-            glowPaint.setMode(PaintMode.STROKE);
-            glowPaint.setStrokeWidth(3.5f);
-            glowPaint.setAntiAlias(true);
-            glowPaint.setMaskFilter(MaskFilter.makeBlur(FilterBlurMode.NORMAL, 2.5f));
-            linePaint.setColor(accent.getRGB());
-            linePaint.setMode(PaintMode.STROKE);
-            linePaint.setStrokeWidth(1.3f);
-            linePaint.setAntiAlias(true);
-            Skia.getCanvas().drawPath(wave, glowPaint);
-            Skia.getCanvas().drawPath(wave, linePaint);
+            try (Path wave = waveBuilder.build()) {
+                glowPaint.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 120).getRGB());
+                glowPaint.setMode(PaintMode.STROKE);
+                glowPaint.setStrokeWidth(3.5f);
+                glowPaint.setAntiAlias(true);
+                glowPaint.setMaskFilter(MaskFilter.makeBlur(FilterBlurMode.NORMAL, 2.5f));
+                linePaint.setColor(accent.getRGB());
+                linePaint.setMode(PaintMode.STROKE);
+                linePaint.setStrokeWidth(1.3f);
+                linePaint.setAntiAlias(true);
+                Skia.getCanvas().drawPath(wave, glowPaint);
+                Skia.getCanvas().drawPath(wave, linePaint);
+            }
         }
         Skia.endHudScale();
     }
@@ -901,18 +905,20 @@ public class Scaffold extends ClientModule {
 
     private void drawCounterWave(float x, float baseY, float len, float amp, Color accent, float stroke) {
         float freq = 9.0f - counterSpeed * 4.0f;
-        try (Path wave = new Path();
+        try (PathBuilder waveBuilder = new PathBuilder();
              Paint linePaint = new Paint()) {
             for (float px = 0; px <= len; px += 1.0f) {
                 float edge = (float) Math.sin(Math.PI * px / len);
                 float py = baseY + (float) Math.sin(px / freq + counterPhase) * amp * edge;
-                if (px == 0) wave.moveTo(x, py); else wave.lineTo(x + px, py);
+                if (px == 0) waveBuilder.moveTo(x, py); else waveBuilder.lineTo(x + px, py);
             }
-            linePaint.setColor(accent.getRGB());
-            linePaint.setMode(PaintMode.STROKE);
-            linePaint.setStrokeWidth(stroke);
-            linePaint.setAntiAlias(true);
-            Skia.getCanvas().drawPath(wave, linePaint);
+            try (Path wave = waveBuilder.build()) {
+                linePaint.setColor(accent.getRGB());
+                linePaint.setMode(PaintMode.STROKE);
+                linePaint.setStrokeWidth(stroke);
+                linePaint.setAntiAlias(true);
+                Skia.getCanvas().drawPath(wave, linePaint);
+            }
         }
     }
 

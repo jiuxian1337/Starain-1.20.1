@@ -7,6 +7,7 @@ import io.github.humbleui.skija.PaintMode;
 import io.github.humbleui.skija.PaintStrokeCap;
 import io.github.humbleui.skija.PaintStrokeJoin;
 import io.github.humbleui.skija.Path;
+import io.github.humbleui.skija.PathBuilder;
 import io.github.humbleui.skija.PathMeasure;
 import io.github.humbleui.types.Rect;
 import today.starain.utils.render.skia.Skia;
@@ -52,7 +53,7 @@ public final class HelloAnimation {
     private static final float BAR_CENTER_RATIO = 0.79F;
 
     private static Path[] strokes;
-    private static Path[] segments;
+    private static PathBuilder[] segments;
     private static PathMeasure[] measures;
     private static float[] lengths;
     private static float total;
@@ -99,7 +100,9 @@ public final class HelloAnimation {
             } else {
                 segments[i].reset();
                 if (measures[i].getSegment(0.0F, drawn, segments[i], true)) {
-                    stroke(canvas, segments[i], opacity);
+                    Path segment = segments[i].build();
+                    stroke(canvas, segment, opacity);
+                    segment.close();
                 }
             }
             drawn -= lengths[i];
@@ -144,11 +147,12 @@ public final class HelloAnimation {
         }
 
         Matrix33 flip = new Matrix33(1.0F, 0.0F, 0.0F, 0.0F, -1.0F, FLIP_Y, 0.0F, 0.0F, 1.0F);
-        first.transform(flip);
-        second.transform(flip);
+        // Skija 0.143 起 Path 不可变，变换改为返回新的 Path。
+        first = first.makeTransform(flip);
+        second = second.makeTransform(flip);
 
         strokes = new Path[]{first, second};
-        segments = new Path[]{new Path(), new Path()};
+        segments = new PathBuilder[]{new PathBuilder(), new PathBuilder()};
         measures = new PathMeasure[strokes.length];
         lengths = new float[strokes.length];
         total = 0.0F;

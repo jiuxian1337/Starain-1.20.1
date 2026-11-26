@@ -1,6 +1,8 @@
 package today.starain.utils.render.skia.image;
 
+import io.github.humbleui.skija.BackendTexture;
 import io.github.humbleui.skija.ColorType;
+import io.github.humbleui.skija.GLTextureInfo;
 import io.github.humbleui.skija.Image;
 import io.github.humbleui.skija.SurfaceOrigin;
 import net.minecraft.client.Minecraft;
@@ -21,13 +23,18 @@ public class ImageHelper {
 
     private final Map<String, Image> images = new HashMap<>();
     private final Map<Integer, Image> textures = new HashMap<>();
+    private final Map<Integer, BackendTexture> backendTextures = new HashMap<>();
 
     public boolean load(int texture, float width, float height, SurfaceOrigin origin) {
 
         if (!textures.containsKey(texture)) {
-            Image image = Image.adoptGLTextureFrom(SkiaContext.getContext(), texture, GL11.GL_TEXTURE_2D, (int) width,
-                    (int) height, GL11.GL_RGBA8, origin, ColorType.RGBA_8888);
+            // Skija 0.143 起改成 BackendTexture + adoptTextureFrom，且 BackendTexture 必须由调用方保活，
+            // 否则它的 finalizer 会提前释放 GL 纹理。
+            GLTextureInfo info = new GLTextureInfo(GL11.GL_TEXTURE_2D, texture, GL11.GL_RGBA8);
+            BackendTexture backendTexture = BackendTexture.makeGL((int) width, (int) height, false, info);
+            Image image = Image.adoptTextureFrom(SkiaContext.getContext(), backendTexture, origin, ColorType.RGBA_8888);
             textures.put(texture, image);
+            backendTextures.put(texture, backendTexture);
         }
 
         return true;

@@ -33,8 +33,27 @@ public class Skia implements Wrapper {
             0xFF000000, 0xFF0000AA, 0xFF00AA00, 0xFF00AAAA, 0xFFAA0000, 0xFFAA00AA, 0xFFAA5500, 0xFFAAAAAA,
             0xFF555555, 0xFF5555FF, 0xFF55FF55, 0xFF55FFFF, 0xFFFF5555, 0xFFFF55FF, 0xFFFFFF55, 0xFFFFFFFF
     };
-    public static Path blurPath = new Path();
-    public static Path shadowPath = new Path();
+    // Skija 0.143 起 Path 不可变，累积多块圆角矩形要先用 PathBuilder，消费时再 build 出 Path。
+    public static PathBuilder blurPath = new PathBuilder();
+    public static PathBuilder shadowPath = new PathBuilder();
+
+    public static Path buildBlurPath() {
+        return blurPath.build();
+    }
+
+    public static Path buildShadowPath() {
+        return shadowPath.build();
+    }
+
+    public static void resetBlurPath() {
+        blurPath.close();
+        blurPath = new PathBuilder();
+    }
+
+    public static void resetShadowPath() {
+        shadowPath.close();
+        shadowPath = new PathBuilder();
+    }
 
     public static void drawRect(float x, float y, float width, float height, Color color) {
         getCanvas().drawRect(Rect.makeXYWH(x, y, width, height), getPaint(color));
@@ -180,8 +199,7 @@ public class Skia implements Wrapper {
 
         float halfStroke = strokeWidth / 2;
 
-        Path path = new Path();
-        path.addRRect(RRect.makeXYWH(x + halfStroke, y + halfStroke, width - strokeWidth, height - strokeWidth,
+        Path path = Path.makeRRect(RRect.makeXYWH(x + halfStroke, y + halfStroke, width - strokeWidth, height - strokeWidth,
                 radius - halfStroke));
 
         Paint paint = getPaint(color);
@@ -283,8 +301,7 @@ public class Skia implements Wrapper {
 
     public static void drawRoundedImage(int textureId, float x, float y, float width, float height, float radius) {
 
-        Path path = new Path();
-        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+        Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
 
         save();
         getCanvas().clipPath(path, ClipMode.INTERSECT, true);
@@ -294,8 +311,7 @@ public class Skia implements Wrapper {
 
     public static void drawRoundedImage(String filePath, float x, float y, float width, float height, float radius) {
 
-        Path path = new Path();
-        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+        Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
 
         save();
         getCanvas().clipPath(path, ClipMode.INTERSECT, true);
@@ -305,8 +321,7 @@ public class Skia implements Wrapper {
 
     public static void drawRoundedImage(File file, float x, float y, float width, float height, float radius) {
 
-        Path path = new Path();
-        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+        Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
 
         save();
         getCanvas().clipPath(path, ClipMode.INTERSECT, true);
@@ -316,8 +331,7 @@ public class Skia implements Wrapper {
 
     public static void drawRoundedImage(int textureId, float x, float y, float width, float height, float radius,
                                         float alpha, SurfaceOrigin origin) {
-        Path path = new Path();
-        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+        Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
 
         save();
         getCanvas().clipPath(path, ClipMode.INTERSECT, true);
@@ -344,8 +358,7 @@ public class Skia implements Wrapper {
             var image = imageHelper.get(textureId);
             if (image == null) return;
 
-            Path path = new Path();
-            path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+            Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
 
             Rect srcRect = Rect.makeXYWH(8, 8, 8, 8);
             Rect srcRect1 = Rect.makeXYWH(40, 8, 8, 8);
@@ -475,9 +488,7 @@ public class Skia implements Wrapper {
         double tick = (currentTime * speed) % (2 * Math.PI);
         float max = Math.max(width, height);
 
-        Path path = new Path();
-
-        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+        Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
 
         float startX = x + width / 2 - (max / 2) * (float) Math.cos(tick);
         float startY = y + height / 2 - (max / 2) * (float) Math.sin(tick);
@@ -512,9 +523,7 @@ public class Skia implements Wrapper {
 
     public static void clip(float x, float y, float width, float height, float radius, ClipMode mode) {
 
-        Path path = new Path();
-
-        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+        Path path = Path.makeRRect(RRect.makeXYWH(x, y, width, height, radius));
         clipPath(path, mode, true);
     }
 
@@ -524,9 +533,7 @@ public class Skia implements Wrapper {
         float[] corners = new float[]{topLeft, topLeft, topRight, topRight, bottomRight, bottomRight, bottomLeft,
                 bottomLeft};
 
-        Path path = new Path();
-
-        path.addRRect(RRect.makeComplexXYWH(x, y, width, height, corners));
+        Path path = Path.makeRRect(RRect.makeComplexXYWH(x, y, width, height, corners));
         clipPath(path, ClipMode.INTERSECT, true);
     }
 

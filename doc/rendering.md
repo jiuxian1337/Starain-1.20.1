@@ -4,7 +4,8 @@ Starain 有两条互不干扰的渲染路径：**Skia（2D/GUI）** 与 **GLSL �
 
 ## 一、Skia 路径
 
-依赖 `io.github.humbleui:skija` 0.116.4，原生库随 jar 打包。
+依赖 `io.github.humbleui:skija` 0.143.18，原生库随 jar 打包（各平台分别构建，见 [build.md](build.md)）。
+Android 上由 `SkijaNatives#prepare()` 在 Skija 初始化前把 `libskija.so` 释放出来并设置 `skija.library.path`。
 
 ### 画布生命周期
 

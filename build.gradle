@@ -15,9 +15,9 @@ group = project.maven_group
 //   build/libs/starain-<版本>-<平台>[-sources].jar
 // ============================================================
 def starainPlatform = (findProperty('starainPlatform') ?: 'all').toString().toLowerCase()
-def skijaVersion = (findProperty('skijaVersion') ?: '0.116.4').toString()
-// Skija 从 0.143.7 起才发布 Android 原生库，0.116.4 没有；CI 里从 Maven 中央仓库拉取。
-def skijaAndroidVersion = (findProperty('skijaAndroidVersion') ?: '0.143.18').toString()
+// 0.143.18 是第一个同时提供桌面与 Android（arm64/x64）产物的版本，全项目统一用它。
+def skijaVersion = (findProperty('skijaVersion') ?: '0.143.18').toString()
+def skijaAndroidVersion = (findProperty('skijaAndroidVersion') ?: skijaVersion).toString()
 
 def skijaNatives = [
         windows: ['skija-windows-x64'],
@@ -82,11 +82,16 @@ dependencies {
         implementation include("io.github.humbleui:${nativeArtifact}:${skijaVersion}")
     }
 
-    // Android：桌面版 0.116.4 没有 android 原生库，改从 Maven 拉 0.143.x 的 arm64/x64 库。
-    // 注意：shared 仍是 ${skijaVersion}，与 android 原生库不同版本，运行时存在 JNI 不匹配风险。
-    // 只用 include 打包，不放进 implementation：这些 jar 里也有 0.143.x 的 Skia 类，
-    // 一旦进编译类路径就会盖掉 0.116.4 的 API，导致正常代码编译失败。
+    // Android 原生库与桌面端同版本（0.143.18）。
+    // 只用 include 打包，不放进 implementation：这些 jar 里也含整套 Skia 类，
+    // 进编译类路径会与 skija-shared 重复，导致依赖冲突解析把 shared 顶到别的版本。
     if (starainPlatform == 'android') {
+        include("io.github.humbleui:skija-android-arm64:${skijaAndroidVersion}")
+        include("io.github.humbleui:skija-android-x64:${skijaAndroidVersion}")
+    }
+
+    // all 变体也带上 Android 原生库，方便一个 jar 覆盖全部平台（含 PojavLauncher）。
+    if (starainPlatform == 'all') {
         include("io.github.humbleui:skija-android-arm64:${skijaAndroidVersion}")
         include("io.github.humbleui:skija-android-x64:${skijaAndroidVersion}")
     }
