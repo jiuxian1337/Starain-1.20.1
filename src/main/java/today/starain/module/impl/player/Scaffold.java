@@ -229,7 +229,7 @@ public class Scaffold extends ClientModule {
             }
         }
         double strength = new Vec3(mc.player.getDeltaMovement().x, 0, mc.player.getDeltaMovement().z).length();
-        if (strength >= 1.5D) {
+        if (strength >= 0.8D) {
             ChatUtils.addChatMessage("你也是要飞了: ", String.valueOf(strength));
         }
         if ((!reachable || strength >= 1.5D) && rotateCount <= 8 && getBlockCount() >= 1 && placeHand() != null) {

@@ -32,10 +32,17 @@ import java.util.stream.IntStream;
 public class ChestStealer extends ClientModule {
     private static final TimerUtils timer = new TimerUtils();
     private static final Random random = new Random();
-    private final NumberValue minDelay = new NumberValue("Min Delay", 0, 1000, 125, 1, this);
-    private final NumberValue delay = new NumberValue("Delay", 0, 1000, 150, 1, this);
-    private final BooleanValue closeDelay = new BooleanValue("Close Delay", true, this);
-    private final NumberValue cDelay = new NumberValue("Close Delay Number", 0, 1000, 150, 1, this, closeDelay::get);
+    private final ModeValue mode = new ModeValue("Mode", "Normal", new String[]{"Normal", "Heypixel"}, this);
+    private final NumberValue minDelay = new NumberValue("Min Delay", 0, 1000, 125, 1, this, () -> mode.isMode("Normal"));
+    private final NumberValue delay = new NumberValue("Delay", 0, 1000, 150, 1, this, () -> mode.isMode("Normal"));
+    private final BooleanValue closeDelay = new BooleanValue("Close Delay", true, this, () -> mode.isMode("Normal"));
+    private final NumberValue cDelay = new NumberValue("Close Delay Number", 0, 1000, 150, 1, this, () -> mode.isMode("Normal") && closeDelay.get());
+    private final NumberValue aiMinDelay = new NumberValue("Ai Min Delay", 50, 300, 90, 5, this, () -> mode.isMode("Heypixel"));
+    private final NumberValue aiMaxDelay = new NumberValue("Ai Max Delay", 100, 600, 200, 5, this, () -> mode.isMode("Heypixel"));
+    private final ModeValue orderMode = new ModeValue("Order Mode", "TSP", new String[]{"TSP", "Smart", "Gaussian"}, this, () -> mode.isMode("Heypixel"));
+    private final BooleanValue humanPause = new BooleanValue("Human Pause", true, this, () -> mode.isMode("Heypixel"));
+    private final BooleanValue smartClose = new BooleanValue("Smart Close", true, this, () -> mode.isMode("Heypixel"));
+    private final BooleanValue occasionalMisclick = new BooleanValue("Occasional Misclick", false, this, () -> mode.isMode("Heypixel"));
     private final BooleanValue pickEnderChest = new BooleanValue("Ender Chest", false, this);
     private final ModeValue render = new ModeValue("Render", "Normal", new String[]{"Normal", "Silent"}, this);
     private Screen lastTickScreen;
@@ -45,6 +52,7 @@ public class ChestStealer extends ClientModule {
     private static volatile BlockPos silentPos;
     private static long silentUntil;
     private final SilentChestRenderer silentRenderer = new SilentChestRenderer();
+    private final HeypixelStealerLogic heypixelLogic = new HeypixelStealerLogic();
 
     public ChestStealer() {
         setName("ChestStealer");
@@ -53,8 +61,14 @@ public class ChestStealer extends ClientModule {
     }
 
     @Override
+    public String getSuffix() {
+        return mode.get();
+    }
+
+    @Override
     protected void onDisable() {
         silentPos = null;
+        heypixelLogic.resetAll();
         super.onDisable();
     }
 
@@ -156,7 +170,7 @@ public class ChestStealer extends ClientModule {
         }
     }
 
-    private static boolean isBestItemInChest(ChestMenu menu, ItemStack stack) {
+    static boolean isBestItemInChest(ChestMenu menu, ItemStack stack) {
         if (!InventoryUtils.isGodItem(stack) && !InventoryUtils.isSharpnessAxe(stack)) {
             for (int i = 0; i < menu.getRowCount() * 9; i++) {
                 ItemStack checkStack = menu.getSlot(i).getItem();
@@ -199,42 +213,75 @@ public class ChestStealer extends ClientModule {
                 if (currentScreen != this.lastTickScreen) {
                     timer.reset();
                     silentRenderer.reset();
-                } else {
-                    String chestTitle = container.getTitle().getString();
-                    String chest = Component.translatable("container.chest").getString();
-                    String largeChest = Component.translatable("container.chestDouble").getString();
-                    String enderChest = Component.translatable("container.enderchest").getString();
-                    if (chestTitle.equals(chest)
-                            || chestTitle.equals(largeChest)
-                            || chestTitle.equals("Chest")
-                            || this.pickEnderChest.get() && chestTitle.equals(enderChest)) {
-                        int nextDelay = Math.max(minDelay.get().intValue(), (int) (this.delay.get().intValue() + random.nextGaussian() * 50));
-                        if (this.isChestEmpty(menu) && timer.delay(nextDelay)) {
-                            if (mc.player != null && closeDelay.get() && timer.delay(cDelay.get().longValue())) {
-                                mc.player.closeContainer();
-                                timer.reset();
-                            }
-
-                        } else {
-                            List<Integer> slots = IntStream.range(0, menu.getRowCount() * 9).boxed().collect(Collectors.toList());
-                            Collections.shuffle(slots);
-
-                            for (Integer pSlotId : slots) {
-                                ItemStack stack = menu.getSlot(pSlotId).getItem();
-                                if (isItemUseful(stack) && isBestItemInChest(menu, stack) && timer.delay(nextDelay)) {
-                                    mc.gameMode.handleInventoryMouseClick(menu.containerId, pSlotId, 0, ClickType.QUICK_MOVE, mc.player);
-                                    silentRenderer.markTaken(pSlotId);
-                                    timer.reset();
-                                    break;
-                                }
-                            }
-                        }
+                    heypixelLogic.onOpen();
+                } else if (matchesTitle(container)) {
+                    if (mode.isMode("Heypixel")) {
+                        handleHeypixel(menu);
+                    } else {
+                        handleNormal(menu);
                     }
                 }
             }
 
             this.lastTickScreen = currentScreen;
         }
+    }
+
+    private void handleNormal(ChestMenu menu) {
+        int nextDelay = Math.max(minDelay.get().intValue(), (int) (this.delay.get().intValue() + random.nextGaussian() * 50));
+        if (this.isChestEmpty(menu) && timer.delay(nextDelay)) {
+            if (mc.player != null && closeDelay.get() && timer.delay(cDelay.get().longValue())) {
+                mc.player.closeContainer();
+                timer.reset();
+            }
+        } else {
+            List<Integer> slots = IntStream.range(0, menu.getRowCount() * 9).boxed().collect(Collectors.toList());
+            Collections.shuffle(slots);
+
+            for (Integer pSlotId : slots) {
+                ItemStack stack = menu.getSlot(pSlotId).getItem();
+                if (isItemUseful(stack) && isBestItemInChest(menu, stack) && timer.delay(nextDelay)) {
+                    mc.gameMode.handleInventoryMouseClick(menu.containerId, pSlotId, 0, ClickType.QUICK_MOVE, mc.player);
+                    silentRenderer.markTaken(pSlotId);
+                    timer.reset();
+                    break;
+                }
+            }
+        }
+    }
+
+    private void handleHeypixel(ChestMenu menu) {
+        if (mc.player == null || mc.gameMode == null) {
+            return;
+        }
+        double guiScale = Math.max(1.0, mc.getWindow().getGuiScale());
+        double mouseX = mc.mouseHandler.xpos() / guiScale;
+        double mouseY = mc.mouseHandler.ypos() / guiScale;
+        double leftPos = (mc.getWindow().getGuiScaledWidth() - 176.0) / 2.0;
+        double topPos = (mc.getWindow().getGuiScaledHeight() - (114.0 + menu.getRowCount() * 18.0)) / 2.0;
+        double mouseCol = (mouseX - (leftPos + 17.0)) / 18.0;
+        double mouseRow = (mouseY - (topPos + 27.0)) / 18.0;
+
+        HeypixelStealerLogic.Config cfg = new HeypixelStealerLogic.Config(
+                aiMinDelay.get().intValue(),
+                aiMaxDelay.get().intValue(),
+                orderMode.get(),
+                humanPause.get(),
+                smartClose.get(),
+                occasionalMisclick.get()
+        );
+        heypixelLogic.tick(menu, cfg, mouseCol, mouseRow, (slotId, clickType) -> {
+            mc.gameMode.handleInventoryMouseClick(menu.containerId, slotId, 0, clickType, mc.player);
+            if (clickType == ClickType.QUICK_MOVE) {
+                silentRenderer.markTaken(slotId);
+            }
+            timer.reset();
+        }, () -> {
+            if (mc.player != null) {
+                mc.player.closeContainer();
+                timer.reset();
+            }
+        });
     }
 
     private boolean isChestEmpty(ChestMenu menu) {
